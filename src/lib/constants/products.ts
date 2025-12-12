@@ -316,41 +316,42 @@ export const PRODUCTS: Product[] = [
 
 export const CULTIVARS: Cultivar[] = [
   // === ORANGE VARIETIES ===
+  // Citrus uses calendar model - perennial crops with predictable harvest windows
   {
     id: 'navel_orange',
     productId: 'orange',
     displayName: 'Washington Navel',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Sweet, seedless, ideal for eating fresh',
-    baseTemp: 55, gddToMaturity: 2800, gddToPeak: 3200, gddWindow: 800,
+    peakMonths: [11, 12, 1], // Nov-Jan
   },
   {
     id: 'cara_cara',
     productId: 'orange',
     displayName: 'Cara Cara',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Pink flesh, low acid, berry notes',
-    baseTemp: 55, gddToMaturity: 2900, gddToPeak: 3300, gddWindow: 700,
+    peakMonths: [12, 1, 2], // Dec-Feb
   },
   {
     id: 'valencia_orange',
     productId: 'orange',
     displayName: 'Valencia',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Premier juicing orange, sweet-tart balance',
-    baseTemp: 55, gddToMaturity: 3400, gddToPeak: 3800, gddWindow: 1000,
+    peakMonths: [3, 4, 5, 6], // Mar-Jun
   },
   {
     id: 'blood_orange',
     productId: 'orange',
     displayName: 'Moro Blood Orange',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Deep red flesh, raspberry-citrus notes',
-    baseTemp: 55, gddToMaturity: 2900, gddToPeak: 3300, gddWindow: 600,
+    peakMonths: [12, 1, 2, 3], // Dec-Mar
   },
 
   // === GRAPEFRUIT VARIETIES ===
@@ -358,28 +359,28 @@ export const CULTIVARS: Cultivar[] = [
     id: 'ruby_red_grapefruit',
     productId: 'grapefruit',
     displayName: 'Ruby Red',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Sweet-tart, deep pink flesh',
-    baseTemp: 55, gddToMaturity: 2600, gddToPeak: 3000, gddWindow: 900,
+    peakMonths: [11, 12, 1, 2, 3, 4, 5], // Nov-May
   },
   {
     id: 'rio_star_grapefruit',
     productId: 'grapefruit',
     displayName: 'Rio Star',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Very sweet, red flesh, Texas favorite',
-    baseTemp: 55, gddToMaturity: 2500, gddToPeak: 2900, gddWindow: 800,
+    peakMonths: [11, 12, 1, 2, 3], // Nov-Mar
   },
   {
     id: 'marsh_grapefruit',
     productId: 'grapefruit',
     displayName: 'Marsh White',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Classic tart grapefruit, white flesh',
-    baseTemp: 55, gddToMaturity: 2700, gddToPeak: 3100, gddWindow: 900,
+    peakMonths: [11, 12, 1, 2, 3, 4, 5], // Nov-May
   },
 
   // === TANGERINE/MANDARIN VARIETIES ===
@@ -387,226 +388,232 @@ export const CULTIVARS: Cultivar[] = [
     id: 'satsuma',
     productId: 'tangerine',
     displayName: 'Owari Satsuma',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Very sweet, seedless, easy peel',
-    baseTemp: 50, gddToMaturity: 2200, gddToPeak: 2500, gddWindow: 500,
+    peakMonths: [10, 11, 12], // Oct-Dec
   },
   {
     id: 'clementine',
     productId: 'tangerine',
     displayName: 'Clementine',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Sweet, seedless, perfect snack size',
-    baseTemp: 55, gddToMaturity: 2400, gddToPeak: 2700, gddWindow: 600,
+    peakMonths: [11, 12, 1], // Nov-Jan
   },
   {
     id: 'honey_tangerine',
     productId: 'tangerine',
     displayName: 'Honey Tangerine (Murcott)',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Intensely sweet, rich flavor, some seeds',
-    baseTemp: 55, gddToMaturity: 3000, gddToPeak: 3400, gddWindow: 600,
+    peakMonths: [1, 2, 3, 4], // Jan-Apr
   },
 
   // === LEMON VARIETIES ===
+  // Lemons produce year-round in warm climates, peak winter
   {
     id: 'eureka_lemon',
     productId: 'lemon',
     displayName: 'Eureka',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Classic lemon, true sour, year-round',
-    baseTemp: 55, gddToMaturity: 2000, gddToPeak: 2400, gddWindow: 1200,
+    peakMonths: [11, 12, 1, 2, 3], // Nov-Mar peak, available year-round
   },
   {
     id: 'meyer_lemon',
     productId: 'lemon',
     displayName: 'Meyer Lemon',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Sweet-tart, floral, thin skin',
-    baseTemp: 50, gddToMaturity: 1800, gddToPeak: 2200, gddWindow: 800,
+    peakMonths: [11, 12, 1, 2, 3], // Nov-Mar
   },
 
   // === APPLE VARIETIES ===
+  // Apples - perennial tree fruit, calendar-based harvest
   {
     id: 'honeycrisp',
     productId: 'apple',
     displayName: 'Honeycrisp',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Explosive crunch, honey-sweet with tang',
     nutritionNotes: 'High in fiber and vitamin C',
-    baseTemp: 43, gddToMaturity: 2200, gddToPeak: 2500, gddWindow: 400,
+    peakMonths: [9, 10], // September-October
   },
   {
     id: 'fuji',
     productId: 'apple',
     displayName: 'Fuji',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Very sweet, dense, long storage',
-    baseTemp: 43, gddToMaturity: 2400, gddToPeak: 2700, gddWindow: 500,
+    peakMonths: [10, 11], // October-November
   },
   {
     id: 'gala',
     productId: 'apple',
     displayName: 'Gala',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Mild sweet, crisp, kids favorite',
-    baseTemp: 43, gddToMaturity: 2000, gddToPeak: 2300, gddWindow: 400,
+    peakMonths: [8, 9], // August-September (early variety)
   },
   {
     id: 'granny_smith',
     productId: 'apple',
     displayName: 'Granny Smith',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Tart, firm, excellent for baking',
-    baseTemp: 43, gddToMaturity: 2500, gddToPeak: 2800, gddWindow: 500,
+    peakMonths: [10, 11], // October-November
   },
   {
     id: 'pink_lady',
     productId: 'apple',
     displayName: 'Pink Lady (Cripps Pink)',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Sweet-tart balance, effervescent',
-    baseTemp: 43, gddToMaturity: 2600, gddToPeak: 2900, gddWindow: 450,
+    peakMonths: [10, 11, 12], // October-December (late variety)
   },
   {
     id: 'arkansas_black',
     productId: 'apple',
     displayName: 'Arkansas Black',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Deep purple, complex, improves in storage',
-    baseTemp: 43, gddToMaturity: 2700, gddToPeak: 3000, gddWindow: 400,
+    peakMonths: [10, 11], // October-November
   },
   {
     id: 'cosmic_crisp',
     productId: 'apple',
     displayName: 'Cosmic Crisp',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isNonGmo: true,
     flavorProfile: 'Ultra crisp, balanced sweet-acid, slow browning',
-    baseTemp: 43, gddToMaturity: 2300, gddToPeak: 2600, gddWindow: 400,
+    peakMonths: [10, 11], // October-November
   },
 
   // === PEACH VARIETIES ===
+  // Peaches - perennial stone fruit, calendar-based harvest
   {
     id: 'elberta_peach',
     productId: 'peach',
     displayName: 'Elberta',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Classic peach flavor, freestone, great for canning',
-    baseTemp: 45, gddToMaturity: 2400, gddToPeak: 2600, gddWindow: 350,
+    peakMonths: [7, 8], // July-August
   },
   {
     id: 'georgia_belle',
     productId: 'peach',
     displayName: 'Georgia Belle',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'White flesh, incredibly sweet and aromatic',
-    baseTemp: 45, gddToMaturity: 2300, gddToPeak: 2500, gddWindow: 300,
+    peakMonths: [7, 8], // July-August
   },
   {
     id: 'redhaven',
     productId: 'peach',
     displayName: 'Redhaven',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Bright red skin, firm yellow flesh, balanced flavor',
-    baseTemp: 45, gddToMaturity: 2100, gddToPeak: 2300, gddWindow: 350,
+    peakMonths: [6, 7], // June-July (early variety)
   },
   {
     id: 'white_lady',
     productId: 'peach',
     displayName: 'White Lady',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'White flesh, sub-acid, intensely sweet',
-    baseTemp: 45, gddToMaturity: 2200, gddToPeak: 2400, gddWindow: 300,
+    peakMonths: [7, 8], // July-August
   },
 
   // === CHERRY VARIETIES ===
+  // Cherries - perennial stone fruit, calendar-based harvest
   {
     id: 'bing_cherry',
     productId: 'cherry',
     displayName: 'Bing',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Deep red, firm, intensely sweet',
-    baseTemp: 40, gddToMaturity: 1600, gddToPeak: 1800, gddWindow: 200,
+    peakMonths: [6, 7], // June-July
   },
   {
     id: 'rainier_cherry',
     productId: 'cherry',
     displayName: 'Rainier',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Yellow-red blush, delicate, ultra-sweet',
-    baseTemp: 40, gddToMaturity: 1550, gddToPeak: 1750, gddWindow: 180,
+    peakMonths: [6, 7], // June-July
   },
   {
     id: 'montmorency',
     productId: 'cherry',
     displayName: 'Montmorency',
-    modelType: 'gdd',
+    modelType: 'calendar',
     isHeritage: true,
     flavorProfile: 'Tart, bright red, perfect for pies',
-    baseTemp: 40, gddToMaturity: 1500, gddToPeak: 1700, gddWindow: 200,
+    peakMonths: [7], // July
   },
 
   // === STRAWBERRY VARIETIES ===
+  // Strawberries - calendar-based (varies by region)
   {
     id: 'chandler_strawberry',
     productId: 'strawberry',
     displayName: 'Chandler',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Large, very sweet, California classic',
-    baseTemp: 50, gddToMaturity: 800, gddToPeak: 1000, gddWindow: 400,
+    peakMonths: [3, 4, 5, 6], // March-June (CA); May-June elsewhere
   },
   {
     id: 'earliglow',
     productId: 'strawberry',
     displayName: 'Earliglow',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Exceptional flavor, early season',
-    baseTemp: 50, gddToMaturity: 650, gddToPeak: 850, gddWindow: 300,
+    peakMonths: [5, 6], // May-June
   },
   {
     id: 'seascape',
     productId: 'strawberry',
     displayName: 'Seascape',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Day-neutral, complex flavor, long season',
-    baseTemp: 50, gddToMaturity: 750, gddToPeak: 950, gddWindow: 500,
+    peakMonths: [5, 6, 7, 8, 9], // May-September (day-neutral, long season)
   },
 
   // === BLUEBERRY VARIETIES ===
+  // Blueberries - perennial shrubs, calendar-based harvest
   {
     id: 'duke_blueberry',
     productId: 'blueberry',
     displayName: 'Duke',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Mild sweet, firm, early season',
-    baseTemp: 45, gddToMaturity: 1100, gddToPeak: 1300, gddWindow: 300,
+    peakMonths: [6, 7], // June-July (early)
   },
   {
     id: 'bluecrop',
     productId: 'blueberry',
     displayName: 'Bluecrop',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Classic blueberry flavor, reliable producer',
-    baseTemp: 45, gddToMaturity: 1200, gddToPeak: 1400, gddWindow: 350,
+    peakMonths: [7, 8], // July-August (mid-season)
   },
   {
     id: 'rabbiteye',
     productId: 'blueberry',
     displayName: 'Rabbiteye',
-    modelType: 'gdd',
+    modelType: 'calendar',
     flavorProfile: 'Heat-tolerant, sweet, southern variety',
-    baseTemp: 50, gddToMaturity: 1400, gddToPeak: 1600, gddWindow: 400,
+    peakMonths: [6, 7, 8], // June-August (southern variety)
   },
 
   // === TOMATO VARIETIES ===
