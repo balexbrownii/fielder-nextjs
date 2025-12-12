@@ -243,7 +243,14 @@ function getProductImage(productId: string, varietyId: string, category: string,
   const pool = PRODUCT_IMAGE_POOLS[varietyKey] || PRODUCT_IMAGE_POOLS[productKey] || PRODUCT_IMAGE_POOLS[category] || PRODUCT_IMAGE_POOLS.fruit
 
   // Use item ID to deterministically pick an image from the pool
-  const index = hashCode(itemId) % pool.length
+  const hash = hashCode(itemId)
+  const index = hash % pool.length
+
+  // Debug logging
+  if (typeof window !== 'undefined') {
+    console.log(`[Image] ${itemId} -> hash:${hash} -> index:${index}/${pool.length} -> ${pool[index].split('photo-')[1]?.slice(0,10)}`)
+  }
+
   return pool[index]
 }
 
