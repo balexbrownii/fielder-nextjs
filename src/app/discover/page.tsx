@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/Header'
-import { useGeolocation, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
+import { useGeolocation, DEFAULT_LOCATION } from '@/lib/hooks/useGeolocation'
 import { useFilters } from '@/lib/hooks/useFilters'
 import { FilterSidebar } from '@/components/FilterSidebar'
 import { formatDistance } from '@/lib/utils/distance'
@@ -70,14 +70,13 @@ export default function DiscoverPage() {
   const [data, setData] = useState<DiscoveryData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
-  const [showLocationPicker, setShowLocationPicker] = useState(false)
 
+  // Use actual location, or fall back to default (Orlando, FL) if geo denied
   const activeLocation = useMemo(() => {
-    if (manualLocation) return manualLocation
     if (location) return { ...location, name: 'your location' }
+    if (geoError) return DEFAULT_LOCATION
     return null
-  }, [manualLocation, location?.lat, location?.lon])
+  }, [location?.lat, location?.lon, geoError])
 
   // Fetch discovery data when location or filters change
   useEffect(() => {
@@ -104,13 +103,6 @@ export default function DiscoverPage() {
       })
   }, [activeLocation?.lat, activeLocation?.lon, filterState.buildQueryString])
 
-  // Show location picker if geo denied
-  useEffect(() => {
-    if (geoError && !manualLocation) {
-      setShowLocationPicker(true)
-    }
-  }, [geoError, manualLocation])
-
   return (
     <div className="min-h-screen bg-[var(--color-cream)]">
       <Header />
@@ -126,53 +118,13 @@ export default function DiscoverPage() {
           </p>
 
           {/* Location indicator */}
-          {activeLocation && !showLocationPicker && (
-            <button
-              onClick={() => setShowLocationPicker(true)}
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm ring-1 ring-stone-200/50 transition-all hover:bg-stone-50 hover:ring-stone-300 active:scale-[0.98]"
-            >
+          {activeLocation && (
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm ring-1 ring-stone-200/50">
               <LocationIcon className="h-4 w-4 text-[var(--color-accent)]" />
-              Near {manualLocation?.name || 'your location'}
-              <ChevronDownIcon className="h-4 w-4 text-stone-400" />
-            </button>
+              {activeLocation.name === 'your location' ? 'Near your location' : `Showing results for ${activeLocation.name}`}
+            </div>
           )}
         </div>
-
-        {/* Location Picker Modal */}
-        {showLocationPicker && (
-          <div className="mb-10 rounded-2xl bg-white p-6 sm:p-8 shadow-lg ring-1 ring-stone-200/50">
-            <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900 mb-2">
-              {geoError ? 'Select your location' : 'Change location'}
-            </h3>
-            {geoError && (
-              <p className="text-sm text-stone-500 mb-6">
-                Location access was denied. Choose a city near you:
-              </p>
-            )}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {FALLBACK_CITIES.map(city => (
-                <button
-                  key={city.name}
-                  onClick={() => {
-                    setManualLocation({ lat: city.lat, lon: city.lon, name: city.name })
-                    setShowLocationPicker(false)
-                  }}
-                  className="rounded-xl border border-stone-200 px-4 py-3.5 text-left transition-all hover:border-[var(--color-accent)] hover:bg-orange-50 hover:shadow-sm active:scale-[0.98]"
-                >
-                  <span className="font-medium text-stone-900">{city.name}</span>
-                </button>
-              ))}
-            </div>
-            {!geoError && (
-              <button
-                onClick={() => setShowLocationPicker(false)}
-                className="mt-6 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Main Content with Sidebar */}
         <div className="flex gap-8">
@@ -185,7 +137,7 @@ export default function DiscoverPage() {
           {/* Results Area */}
           <div className="flex-1 min-w-0">
             {/* Loading State */}
-            {(geoLoading || loading) && !showLocationPicker && (
+            {(geoLoading || loading) && (
               <div className="flex flex-col items-center justify-center py-24">
                 <div className="h-12 w-12 animate-spin rounded-full border-4 border-stone-200 border-t-[var(--color-accent)]" />
                 <p className="mt-4 text-stone-600">
@@ -521,14 +473,6 @@ function LocationIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  )
-}
-
-function ChevronDownIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   )
 }

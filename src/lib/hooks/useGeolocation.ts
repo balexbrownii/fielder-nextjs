@@ -94,12 +94,12 @@ export function useGeolocation(autoRequest = true): UseGeolocationReturn {
 }
 
 /**
- * Default coordinates for fallback (center of continental US)
+ * Default coordinates for fallback (Orlando, FL - central to produce regions)
  */
 export const DEFAULT_LOCATION = {
-  lat: 39.8283,
-  lon: -98.5795,
-  name: 'United States',
+  lat: 28.5383,
+  lon: -81.3792,
+  name: 'Orlando, FL',
 }
 
 /**
