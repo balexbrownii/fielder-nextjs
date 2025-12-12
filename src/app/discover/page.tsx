@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useGeolocation, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
 import { formatDistance } from '@/lib/utils/distance'
@@ -41,7 +41,12 @@ export default function DiscoverPage() {
   const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
 
-  const activeLocation = manualLocation || (location ? { ...location, name: 'your location' } : null)
+  // Memoize to prevent infinite re-renders
+  const activeLocation = useMemo(() => {
+    if (manualLocation) return manualLocation
+    if (location) return { ...location, name: 'your location' }
+    return null
+  }, [manualLocation, location?.lat, location?.lon])
 
   // Fetch discovery data when location is available
   useEffect(() => {
@@ -64,7 +69,7 @@ export default function DiscoverPage() {
         setError('Failed to load data')
         setLoading(false)
       })
-  }, [activeLocation])
+  }, [activeLocation?.lat, activeLocation?.lon])
 
   // Show location picker if geo denied
   useEffect(() => {
