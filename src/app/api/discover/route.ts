@@ -1,43 +1,67 @@
 /**
  * GET /api/discover
  *
- * Batch discovery endpoint - fetches predictions for all crops
- * in all regions, sorted by distance from user
+ * Discovery endpoint - fetches predictions from Supabase (pre-computed)
+ * or falls back to on-the-fly computation if Supabase isn't configured.
+ *
+ * Query params:
+ *   - lat, lon (required): User location for distance sorting
+ *   - maxDistance: Filter by distance in miles (50, 100, 250, 500)
+ *   - status: Comma-separated list of statuses (at_peak, in_season, approaching, off_season)
+ *   - categories: Comma-separated list of categories (fruit, vegetable, nut, meat, dairy, honey, processed)
+ *   - subcategories: Comma-separated list (citrus, stone_fruit, etc.)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { weatherService } from '@/lib/services/weather'
 import { harvestPredictor } from '@/lib/services/harvest-predictor'
-import { getGddTargets, CROP_GDD_TARGETS } from '@/lib/constants/gdd-targets'
 import { US_GROWING_REGIONS } from '@/lib/constants/regions'
 import { getDistanceMiles } from '@/lib/utils/distance'
+import type { DailyPrediction } from '@/lib/supabase/types'
 
-interface DiscoveryItem {
-  crop: string
-  cropName: string
-  region: string
-  regionName: string
-  state: string
-  distanceMiles: number
-  status: string
-  statusMessage: string
-  harvestStart: string
-  harvestEnd: string
-  optimalStart: string
-  optimalEnd: string
-  daysUntil?: number
-  confidence: number
-  sugarAcid?: {
-    ssc: number
-    ta: number
-    ratio: number
-    brimA: number
-  }
+// Supabase client - may be null if not configured
+let supabase: SupabaseClient | null = null
+if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
 }
 
-// Cache predictions for 30 minutes (weather doesn't change that fast)
-const cache = new Map<string, { data: DiscoveryItem[]; timestamp: number }>()
-const CACHE_TTL = 30 * 60 * 1000
+interface DiscoveryResult {
+  id: string
+  offeringId: string
+  varietyId: string
+  productId: string
+  regionId: string
+  status: string
+  statusMessage: string | null
+  harvestStart: string | null
+  harvestEnd: string | null
+  optimalStart: string | null
+  optimalEnd: string | null
+  daysUntilStart: number | null
+  confidence: number
+  distanceMiles: number
+  category: string
+  subcategory: string
+  modelType: string
+  qualityTier: string | null
+  brix: number | null
+  acidity: number | null
+  brixAcidRatio: number | null
+  isHeritage: boolean
+  isNonGmo: boolean
+  productDisplayName: string
+  varietyDisplayName: string
+  regionDisplayName: string
+  state: string
+  flavorProfile: string | null
+  flavorNotes: string | null
+  regionLat: number
+  regionLon: number
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -51,154 +75,351 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  try {
-    // Check cache first (cache key ignores user location since predictions are same)
-    const cacheKey = new Date().toISOString().slice(0, 13) // Hour-based key
-    const cached = cache.get(cacheKey)
-    let allPredictions: DiscoveryItem[]
+  // Parse filter params
+  const maxDistance = parseFloat(searchParams.get('maxDistance') || '') || null
+  const statusFilter = searchParams.get('status')?.split(',').filter(Boolean) || null
+  const categoryFilter = searchParams.get('categories')?.split(',').filter(Boolean) || null
+  const subcategoryFilter = searchParams.get('subcategories')?.split(',').filter(Boolean) || null
 
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      allPredictions = cached.data
+  try {
+    let results: DiscoveryResult[]
+
+    if (supabase) {
+      // Query pre-computed predictions from Supabase
+      results = await fetchFromSupabase(lat, lon, {
+        maxDistance,
+        statusFilter,
+        categoryFilter,
+        subcategoryFilter,
+      })
     } else {
-      // Fetch all predictions
-      allPredictions = await fetchAllPredictions()
-      cache.set(cacheKey, { data: allPredictions, timestamp: Date.now() })
+      // Fall back to on-the-fly computation
+      console.log('[Discover] Supabase not configured, using fallback computation')
+      results = await fetchFallback(lat, lon, {
+        maxDistance,
+        statusFilter,
+        categoryFilter,
+        subcategoryFilter,
+      })
     }
 
-    // Add distance to each prediction and sort
-    const withDistance = allPredictions.map(item => {
-      const region = US_GROWING_REGIONS[item.region]
-      const distance = getDistanceMiles(lat, lon, region.latitude, region.longitude)
-      return { ...item, distanceMiles: distance }
-    })
+    // Group by status for UI
+    const atPeak = results.filter(p => p.status === 'at_peak')
+    const inSeason = results.filter(p => p.status === 'in_season')
+    const approaching = results.filter(p => p.status === 'approaching')
+    const offSeason = results.filter(p => p.status === 'off_season')
 
-    // Separate into in-season and coming soon
-    const inSeason = withDistance
-      .filter(p => p.status === 'at_peak' || p.status === 'in_season')
-      .sort((a, b) => {
-        // At peak first, then by distance
-        if (a.status === 'at_peak' && b.status !== 'at_peak') return -1
-        if (b.status === 'at_peak' && a.status !== 'at_peak') return 1
-        return a.distanceMiles - b.distanceMiles
-      })
-
-    const comingSoon = withDistance
-      .filter(p => p.status === 'approaching' && (p.daysUntil ?? 999) <= 21)
-      .sort((a, b) => {
-        // Soonest first, then by distance
-        const daysA = a.daysUntil ?? 999
-        const daysB = b.daysUntil ?? 999
-        if (daysA !== daysB) return daysA - daysB
-        return a.distanceMiles - b.distanceMiles
-      })
+    // Count by category for filter UI
+    const categoryCounts = results.reduce((acc, p) => {
+      acc[p.category] = (acc[p.category] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
 
     return NextResponse.json({
+      atPeak,
       inSeason,
-      comingSoon,
-      totalRegions: Object.keys(US_GROWING_REGIONS).length,
+      approaching,
+      offSeason,
+      totalResults: results.length,
+      categoryCounts,
+      source: supabase ? 'supabase' : 'computed',
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Discovery error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch discovery data' },
+      { error: 'Failed to fetch discovery data', details: String(error) },
       { status: 500 }
     )
   }
 }
 
 /**
- * Fetch predictions for all viable crop/region combinations
+ * Fetch predictions from Supabase (pre-computed)
  */
-async function fetchAllPredictions(): Promise<DiscoveryItem[]> {
-  const predictions: DiscoveryItem[] = []
-  const today = new Date()
-  const referenceDate = new Date(today.getFullYear(), 0, 1)
+async function fetchFromSupabase(
+  userLat: number,
+  userLon: number,
+  filters: {
+    maxDistance: number | null
+    statusFilter: string[] | null
+    categoryFilter: string[] | null
+    subcategoryFilter: string[] | null
+  }
+): Promise<DiscoveryResult[]> {
+  const today = new Date().toISOString().slice(0, 10)
 
-  // Build list of all crop/region combinations
-  const combinations: { crop: string; region: string }[] = []
-  for (const [regionId, region] of Object.entries(US_GROWING_REGIONS)) {
-    for (const crop of region.viableCrops) {
-      combinations.push({ crop, region: regionId })
-    }
+  // Build query
+  let query = supabase!
+    .from('daily_predictions')
+    .select('*')
+    .eq('computed_date', today)
+
+  // Apply status filter
+  if (filters.statusFilter && filters.statusFilter.length > 0) {
+    query = query.in('status', filters.statusFilter)
   }
 
-  // Fetch GDD data for each region (deduplicated)
+  // Apply category filter
+  if (filters.categoryFilter && filters.categoryFilter.length > 0) {
+    query = query.in('category', filters.categoryFilter)
+  }
+
+  // Apply subcategory filter
+  if (filters.subcategoryFilter && filters.subcategoryFilter.length > 0) {
+    query = query.in('subcategory', filters.subcategoryFilter)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[Discover] Supabase query error:', error)
+    throw error
+  }
+
+  if (!data || data.length === 0) {
+    console.log('[Discover] No predictions found for today, falling back to computation')
+    return fetchFallback(userLat, userLon, filters)
+  }
+
+  // Map to results with distance
+  let results: DiscoveryResult[] = data.map((row: DailyPrediction) => ({
+    id: row.id,
+    offeringId: row.offering_id,
+    varietyId: row.variety_id,
+    productId: row.product_id,
+    regionId: row.region_id,
+    status: row.status,
+    statusMessage: row.status_message,
+    harvestStart: row.harvest_start,
+    harvestEnd: row.harvest_end,
+    optimalStart: row.optimal_start,
+    optimalEnd: row.optimal_end,
+    daysUntilStart: row.days_until_start,
+    confidence: row.confidence,
+    distanceMiles: getDistanceMiles(userLat, userLon, row.region_lat, row.region_lon),
+    category: row.category,
+    subcategory: row.subcategory,
+    modelType: row.model_type,
+    qualityTier: row.quality_tier,
+    brix: row.brix,
+    acidity: row.acidity,
+    brixAcidRatio: row.brix_acid_ratio,
+    isHeritage: row.is_heritage,
+    isNonGmo: row.is_non_gmo,
+    productDisplayName: row.product_display_name,
+    varietyDisplayName: row.variety_display_name,
+    regionDisplayName: row.region_display_name,
+    state: row.state,
+    flavorProfile: row.flavor_profile,
+    flavorNotes: row.flavor_notes,
+    regionLat: row.region_lat,
+    regionLon: row.region_lon,
+  }))
+
+  // Apply distance filter
+  if (filters.maxDistance) {
+    results = results.filter(r => r.distanceMiles <= filters.maxDistance!)
+  }
+
+  // Sort by status priority then distance
+  const statusPriority: Record<string, number> = {
+    'at_peak': 0,
+    'in_season': 1,
+    'approaching': 2,
+    'off_season': 3,
+  }
+
+  results.sort((a, b) => {
+    const statusDiff = statusPriority[a.status] - statusPriority[b.status]
+    if (statusDiff !== 0) return statusDiff
+    return a.distanceMiles - b.distanceMiles
+  })
+
+  return results
+}
+
+/**
+ * Fallback: compute predictions on-the-fly (when Supabase not configured)
+ */
+async function fetchFallback(
+  userLat: number,
+  userLon: number,
+  filters: {
+    maxDistance: number | null
+    statusFilter: string[] | null
+    categoryFilter: string[] | null
+    subcategoryFilter: string[] | null
+  }
+): Promise<DiscoveryResult[]> {
+  // Import the products catalog
+  const { REGIONAL_OFFERINGS, getOfferingDetails } = await import('@/lib/constants/products')
+
+  const today = new Date()
+  const referenceDate = new Date(today.getFullYear(), 0, 1)
+  const todayStr = today.toISOString().slice(0, 10)
+
+  // Fetch GDD data for all regions
   const regionGddMap = new Map<string, { totalGdd: number; avgDailyGdd: number }>()
 
   await Promise.all(
-    Object.entries(US_GROWING_REGIONS).map(async ([regionId, region]) => {
-      // Use the first crop's base temp (most regions are citrus-heavy anyway)
-      // This is a simplification - ideally we'd fetch per-crop base temps
-      const firstCrop = region.viableCrops[0]
-      const targets = getGddTargets(firstCrop)
-
+    Object.keys(US_GROWING_REGIONS).map(async (regionId) => {
       try {
-        const gddData = await weatherService.getGddAccumulation(
-          regionId,
-          referenceDate,
-          targets.baseTemp
-        )
+        const gddData = await weatherService.getGddAccumulation(regionId, referenceDate, 50)
         regionGddMap.set(regionId, gddData)
       } catch (e) {
-        console.error(`Failed to get GDD for ${regionId}:`, e)
+        console.warn(`[Discover] Failed to get GDD for ${regionId}:`, e)
       }
     })
   )
 
-  // Generate predictions for each combination
-  for (const { crop, region: regionId } of combinations) {
-    const regionData = US_GROWING_REGIONS[regionId]
-    const gddData = regionGddMap.get(regionId)
+  const results: DiscoveryResult[] = []
 
-    if (!gddData) continue
+  for (const offering of REGIONAL_OFFERINGS) {
+    if (!offering.isActive) continue
 
-    try {
-      const targets = getGddTargets(crop)
+    const details = getOfferingDetails(offering.id)
+    if (!details) continue
 
-      const window = harvestPredictor.predictHarvestWindow(
-        crop,
-        regionId,
-        gddData.totalGdd,
-        gddData.avgDailyGdd
-      )
+    const { variety, product, gddToMaturity, gddToPeak, gddWindow, baseTemp, peakMonths } = details
+    const region = US_GROWING_REGIONS[offering.regionId]
+    if (!region) continue
 
-      const formatted = harvestPredictor.formatHarvestWindow(window)
-      const status = harvestPredictor.getHarvestStatus(window)
+    // Apply category filter
+    if (filters.categoryFilter && !filters.categoryFilter.includes(product.category)) continue
+    if (filters.subcategoryFilter && !filters.subcategoryFilter.includes(product.subcategory)) continue
 
-      // Sugar/acid for citrus
-      let sugarAcid
-      if (['navel_orange', 'valencia', 'grapefruit', 'tangerine', 'satsuma'].includes(crop)) {
-        sugarAcid = harvestPredictor.estimateSugarAcid(gddData.totalGdd)
+    // Calculate distance
+    const distance = getDistanceMiles(userLat, userLon, region.latitude, region.longitude)
+    if (filters.maxDistance && distance > filters.maxDistance) continue
+
+    let status: string
+    let statusMessage: string
+    let daysUntilStart: number | null = null
+    let harvestStart: string | null = null
+    let harvestEnd: string | null = null
+    let optimalStart: string | null = null
+    let optimalEnd: string | null = null
+    let confidence = 0.85
+
+    if (variety.modelType === 'gdd') {
+      const gddData = regionGddMap.get(offering.regionId)
+      if (!gddData) continue
+
+      const gddToMaturityVal = gddToMaturity ?? 2000
+      const gddToPeakVal = gddToPeak ?? (gddToMaturityVal + (gddWindow ?? 400) / 2)
+      const gddWindowVal = gddWindow ?? 400
+
+      const daysToMaturity = gddData.avgDailyGdd > 0
+        ? Math.round((gddToMaturityVal - gddData.totalGdd) / gddData.avgDailyGdd)
+        : 0
+
+      const daysToEnd = gddData.avgDailyGdd > 0
+        ? Math.round((gddToMaturityVal + gddWindowVal - gddData.totalGdd) / gddData.avgDailyGdd)
+        : 0
+
+      // Determine status
+      if (daysToMaturity <= 0 && daysToEnd > 0) {
+        // In harvest window
+        const midpoint = (daysToMaturity + daysToEnd) / 2
+        if (Math.abs(daysToMaturity) < gddWindowVal / (gddData.avgDailyGdd * 4)) {
+          status = 'at_peak'
+          statusMessage = `Peak quality now`
+        } else {
+          status = 'in_season'
+          statusMessage = `In season`
+        }
+      } else if (daysToMaturity > 0 && daysToMaturity <= 30) {
+        status = 'approaching'
+        statusMessage = `Coming in ~${daysToMaturity} days`
+        daysUntilStart = daysToMaturity
+      } else {
+        status = 'off_season'
+        statusMessage = daysToEnd < 0 ? 'Season ended' : 'Off season'
       }
 
-      // Format crop name
-      const cropName = crop
-        .split('_')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
+      // Calculate dates
+      const harvestStartDate = new Date(today.getTime() + daysToMaturity * 24 * 60 * 60 * 1000)
+      const harvestEndDate = new Date(today.getTime() + daysToEnd * 24 * 60 * 60 * 1000)
+      harvestStart = harvestStartDate.toISOString().slice(0, 10)
+      harvestEnd = harvestEndDate.toISOString().slice(0, 10)
 
-      predictions.push({
-        crop,
-        cropName,
-        region: regionId,
-        regionName: regionData.displayName,
-        state: regionData.state,
-        distanceMiles: 0, // Will be filled in later
-        status: status.status,
-        statusMessage: status.message,
-        harvestStart: formatted.harvestStartDate,
-        harvestEnd: formatted.harvestEndDate,
-        optimalStart: formatted.optimalStartDate,
-        optimalEnd: formatted.optimalEndDate,
-        daysUntil: status.daysUntil,
-        confidence: window.confidence,
-        sugarAcid,
-      })
-    } catch (e) {
-      console.error(`Failed to predict ${crop} in ${regionId}:`, e)
+    } else if (variety.modelType === 'calendar') {
+      const currentMonth = today.getMonth() + 1
+      const isInPeak = peakMonths?.includes(currentMonth) || false
+      const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1
+      const isApproaching = !isInPeak && (peakMonths?.includes(nextMonth) || false)
+
+      if (isInPeak) {
+        status = 'at_peak'
+        statusMessage = `At peak availability`
+      } else if (isApproaching) {
+        status = 'approaching'
+        const nextMonthStart = new Date(today.getFullYear(), nextMonth - 1, 1)
+        if (nextMonth === 1) nextMonthStart.setFullYear(today.getFullYear() + 1)
+        daysUntilStart = Math.ceil((nextMonthStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        statusMessage = `Coming soon - peak begins next month`
+      } else {
+        status = 'off_season'
+        statusMessage = 'Off season'
+      }
+      confidence = 0.90
+    } else {
+      // Parent model - skip for now
+      continue
     }
+
+    // Apply status filter
+    if (filters.statusFilter && !filters.statusFilter.includes(status)) continue
+
+    results.push({
+      id: offering.id,
+      offeringId: offering.id,
+      varietyId: variety.id,
+      productId: product.id,
+      regionId: offering.regionId,
+      status,
+      statusMessage,
+      harvestStart,
+      harvestEnd,
+      optimalStart,
+      optimalEnd,
+      daysUntilStart,
+      confidence,
+      distanceMiles: distance,
+      category: product.category,
+      subcategory: product.subcategory,
+      modelType: variety.modelType,
+      qualityTier: offering.qualityTier || null,
+      brix: null,
+      acidity: null,
+      brixAcidRatio: null,
+      isHeritage: variety.isHeritage || false,
+      isNonGmo: variety.isNonGmo || false,
+      productDisplayName: product.displayName,
+      varietyDisplayName: variety.displayName,
+      regionDisplayName: region.displayName,
+      state: region.state,
+      flavorProfile: variety.flavorProfile || null,
+      flavorNotes: offering.flavorNotes || null,
+      regionLat: region.latitude,
+      regionLon: region.longitude,
+    })
   }
 
-  return predictions
+  // Sort by status priority then distance
+  const statusPriority: Record<string, number> = {
+    'at_peak': 0,
+    'in_season': 1,
+    'approaching': 2,
+    'off_season': 3,
+  }
+
+  results.sort((a, b) => {
+    const statusDiff = statusPriority[a.status] - statusPriority[b.status]
+    if (statusDiff !== 0) return statusDiff
+    return a.distanceMiles - b.distanceMiles
+  })
+
+  return results
 }

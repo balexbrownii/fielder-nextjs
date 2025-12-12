@@ -394,6 +394,63 @@ export const US_GROWING_REGIONS: Record<string, GrowingRegion> = {
       usdaZone: '7'
     },
     viableCrops: ['blueberry']
+  },
+
+  // === GULF COAST ===
+  gulf_coast_citrus: {
+    id: 'gulf_coast_citrus',
+    name: 'Gulf Coast Citrus (Louisiana/Mississippi)',
+    displayName: 'Gulf Coast',
+    state: 'LA',
+    latitude: 30.0,
+    longitude: -90.0,
+    climate: {
+      avgLastFrostDoy: 60,
+      avgFirstFrostDoy: 330,
+      frostFreeDays: 270,
+      annualGdd50: 4800,
+      avgChillHours: 400,
+      usdaZone: '9'
+    },
+    viableCrops: ['satsuma', 'meyer_lemon']
+  },
+
+  // === NEW ENGLAND ===
+  new_england: {
+    id: 'new_england',
+    name: 'New England (Vermont/Massachusetts)',
+    displayName: 'New England',
+    state: 'VT',
+    latitude: 44.0,
+    longitude: -72.7,
+    climate: {
+      avgLastFrostDoy: 130,
+      avgFirstFrostDoy: 270,
+      frostFreeDays: 140,
+      annualGdd50: 2200,
+      avgChillHours: 1400,
+      usdaZone: '5'
+    },
+    viableCrops: ['apple', 'maple_syrup', 'blueberry']
+  },
+
+  // === SOUTH CAROLINA ===
+  south_carolina_ridge: {
+    id: 'south_carolina_ridge',
+    name: 'South Carolina Peach Ridge',
+    displayName: 'SC Peach Ridge',
+    state: 'SC',
+    latitude: 34.5,
+    longitude: -82.0,
+    climate: {
+      avgLastFrostDoy: 85,
+      avgFirstFrostDoy: 310,
+      frostFreeDays: 225,
+      annualGdd50: 3600,
+      avgChillHours: 900,
+      usdaZone: '7'
+    },
+    viableCrops: ['peach', 'nectarine']
   }
 }
 
