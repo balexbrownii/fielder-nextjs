@@ -70,11 +70,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [currentSeason, setCurrentSeason] = useState<string>('winter')
   const [totalResults, setTotalResults] = useState(0)
-  const [locationName, setLocationName] = useState<string | null>(null)
+  const [locationName, setLocationName] = useState<string | null>(DEFAULT_LOCATION.name)
   const [showCityPicker, setShowCityPicker] = useState(false)
   const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
-
-  const activeLocation = manualLocation || (geoLocation ? { ...geoLocation, name: locationName || undefined } : null)
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false)
 
   const fetchDiscoveryData = useCallback(async (lat: number, lon: number) => {
     setLoading(true)
@@ -103,9 +102,27 @@ export default function Home() {
     }
   }, [])
 
-  // Reverse geocode to get city name
+  // Load with default location immediately on mount
   useEffect(() => {
-    if (geoLocation && !manualLocation && !locationName) {
+    if (!hasLoadedInitial) {
+      setHasLoadedInitial(true)
+      fetchDiscoveryData(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon)
+    }
+  }, [hasLoadedInitial, fetchDiscoveryData])
+
+  // When user selects a manual location, fetch that
+  useEffect(() => {
+    if (manualLocation) {
+      fetchDiscoveryData(manualLocation.lat, manualLocation.lon)
+      setLocationName(manualLocation.name)
+    }
+  }, [manualLocation, fetchDiscoveryData])
+
+  // When geolocation completes successfully, update to user's actual location
+  useEffect(() => {
+    if (geoLocation && !manualLocation) {
+      fetchDiscoveryData(geoLocation.lat, geoLocation.lon)
+      // Reverse geocode to get city name
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${geoLocation.lat}&lon=${geoLocation.lon}&format=json`)
         .then(res => res.json())
         .then(data => {
@@ -118,17 +135,7 @@ export default function Home() {
         })
         .catch(() => {})
     }
-  }, [geoLocation, manualLocation, locationName])
-
-  // Fetch data when location is available
-  useEffect(() => {
-    if (activeLocation) {
-      fetchDiscoveryData(activeLocation.lat, activeLocation.lon)
-    } else if (!geoLoading && geoError) {
-      fetchDiscoveryData(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon)
-      setLocationName(DEFAULT_LOCATION.name)
-    }
-  }, [activeLocation, geoLoading, geoError, fetchDiscoveryData])
+  }, [geoLocation, manualLocation, fetchDiscoveryData])
 
   const handleCitySelect = (city: typeof FALLBACK_CITIES[0]) => {
     setManualLocation({ lat: city.lat, lon: city.lon, name: city.name })
@@ -224,7 +231,7 @@ export default function Home() {
         {loading ? (
           <LoadingState />
         ) : error ? (
-          <ErrorState message={error} onRetry={() => activeLocation && fetchDiscoveryData(activeLocation.lat, activeLocation.lon)} />
+          <ErrorState message={error} onRetry={() => fetchDiscoveryData(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon)} />
         ) : (
           <div className="space-y-12">
             {/* At Peak Section */}
