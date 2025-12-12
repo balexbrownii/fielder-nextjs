@@ -1142,6 +1142,46 @@ export const OFFERINGS_BY_REGION: Record<string, RegionalOffering[]> = REGIONAL_
 // =============================================================================
 
 /**
+ * Calendar seasons (not astronomical):
+ * - Winter: December, January, February (12, 1, 2)
+ * - Spring: March, April, May (3, 4, 5)
+ * - Summer: June, July, August (6, 7, 8)
+ * - Fall: September, October, November (9, 10, 11)
+ */
+export function getSeasonsFromMonths(months: number[] | undefined): Season[] {
+  if (!months || months.length === 0) return []
+
+  const seasons = new Set<Season>()
+
+  for (const month of months) {
+    if (month === 12 || month === 1 || month === 2) {
+      seasons.add('winter')
+    } else if (month >= 3 && month <= 5) {
+      seasons.add('spring')
+    } else if (month >= 6 && month <= 8) {
+      seasons.add('summer')
+    } else if (month >= 9 && month <= 11) {
+      seasons.add('fall')
+    }
+  }
+
+  // Return in seasonal order
+  const seasonOrder: Season[] = ['spring', 'summer', 'fall', 'winter']
+  return seasonOrder.filter(s => seasons.has(s))
+}
+
+/**
+ * Get the current calendar season
+ */
+export function getCurrentSeason(): Season {
+  const month = new Date().getMonth() + 1 // 1-12
+  if (month === 12 || month === 1 || month === 2) return 'winter'
+  if (month >= 3 && month <= 5) return 'spring'
+  if (month >= 6 && month <= 8) return 'summer'
+  return 'fall'
+}
+
+/**
  * Get complete offering info with product, variety, and region data merged
  */
 export function getOfferingDetails(offeringId: string) {
@@ -1158,6 +1198,9 @@ export function getOfferingDetails(offeringId: string) {
   const product = PRODUCTS_BY_ID[variety.productId]
   if (!product) return null
 
+  const peakMonths = offering.peakMonthsOverride ?? variety.peakMonths
+  const seasons = getSeasonsFromMonths(peakMonths)
+
   return {
     ...offering,
     variety,
@@ -1168,7 +1211,9 @@ export function getOfferingDetails(offeringId: string) {
     gddWindow: offering.gddWindowOverride ?? variety.gddWindow,
     baseTemp: offering.baseTempOverride ?? variety.baseTemp,
     // For calendar-based
-    peakMonths: offering.peakMonthsOverride ?? variety.peakMonths,
+    peakMonths,
+    // Derived seasons from peakMonths
+    seasons,
   }
 }
 

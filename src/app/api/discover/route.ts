@@ -27,6 +27,8 @@ if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANO
   )
 }
 
+type Season = 'spring' | 'summer' | 'fall' | 'winter'
+
 interface DiscoveryResult {
   id: string
   offeringId: string
@@ -59,6 +61,7 @@ interface DiscoveryResult {
   flavorNotes: string | null
   regionLat: number
   regionLon: number
+  seasons: Season[]
 }
 
 export async function GET(request: NextRequest) {
@@ -78,6 +81,14 @@ export async function GET(request: NextRequest) {
   const statusFilter = searchParams.get('status')?.split(',').filter(Boolean) || null
   const categoryFilter = searchParams.get('categories')?.split(',').filter(Boolean) || null
   const subcategoryFilter = searchParams.get('subcategories')?.split(',').filter(Boolean) || null
+  const seasonsFilter = searchParams.get('seasons')?.split(',').filter(Boolean) as Season[] | null
+
+  // Determine current season
+  const month = new Date().getMonth() + 1
+  const currentSeason: Season =
+    month === 12 || month === 1 || month === 2 ? 'winter' :
+    month >= 3 && month <= 5 ? 'spring' :
+    month >= 6 && month <= 8 ? 'summer' : 'fall'
 
   try {
     let results: DiscoveryResult[]
@@ -91,6 +102,7 @@ export async function GET(request: NextRequest) {
           statusFilter,
           categoryFilter,
           subcategoryFilter,
+          seasonsFilter,
         })
         source = 'supabase'
       } catch (supabaseError) {
@@ -101,6 +113,7 @@ export async function GET(request: NextRequest) {
           statusFilter,
           categoryFilter,
           subcategoryFilter,
+          seasonsFilter,
         })
       }
     } else {
@@ -111,6 +124,7 @@ export async function GET(request: NextRequest) {
         statusFilter,
         categoryFilter,
         subcategoryFilter,
+        seasonsFilter,
       })
     }
 
@@ -126,6 +140,14 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, number>)
 
+    // Count by season for filter UI
+    const seasonCounts = results.reduce((acc, p) => {
+      for (const season of p.seasons) {
+        acc[season] = (acc[season] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>)
+
     return NextResponse.json({
       atPeak,
       inSeason,
@@ -133,6 +155,8 @@ export async function GET(request: NextRequest) {
       offSeason,
       totalResults: results.length,
       categoryCounts,
+      seasonCounts,
+      currentSeason,
       source,
       timestamp: new Date().toISOString(),
     })
@@ -167,6 +191,7 @@ async function fetchFromSupabase(
     statusFilter: string[] | null
     categoryFilter: string[] | null
     subcategoryFilter: string[] | null
+    seasonsFilter: Season[] | null
   }
 ): Promise<DiscoveryResult[]> {
   const today = new Date().toISOString().slice(0, 10)
@@ -204,40 +229,50 @@ async function fetchFromSupabase(
     return fetchFallback(userLat, userLon, filters)
   }
 
+  // Import getSeasonsFromMonths for deriving seasons
+  const { getSeasonsFromMonths } = await import('@/lib/constants/products')
+
   // Map to results with distance
-  let results: DiscoveryResult[] = data.map((row: DailyPrediction) => ({
-    id: row.id,
-    offeringId: row.offering_id,
-    varietyId: row.variety_id,
-    productId: row.product_id,
-    regionId: row.region_id,
-    status: row.status,
-    statusMessage: row.status_message,
-    harvestStart: row.harvest_start,
-    harvestEnd: row.harvest_end,
-    optimalStart: row.optimal_start,
-    optimalEnd: row.optimal_end,
-    daysUntilStart: row.days_until_start,
-    confidence: row.confidence,
-    distanceMiles: getDistanceMiles(userLat, userLon, row.region_lat, row.region_lon),
-    category: row.category,
-    subcategory: row.subcategory,
-    modelType: row.model_type,
-    qualityTier: row.quality_tier,
-    brix: row.brix,
-    acidity: row.acidity,
-    brixAcidRatio: row.brix_acid_ratio,
-    isHeritage: row.is_heritage,
-    isNonGmo: row.is_non_gmo,
-    productDisplayName: row.product_display_name,
-    varietyDisplayName: row.variety_display_name,
-    regionDisplayName: row.region_display_name,
-    state: row.state,
-    flavorProfile: row.flavor_profile,
-    flavorNotes: row.flavor_notes,
-    regionLat: row.region_lat,
-    regionLon: row.region_lon,
-  }))
+  let results: DiscoveryResult[] = data.map((row: DailyPrediction) => {
+    // Derive seasons from peak_months if available in the row
+    const peakMonths = (row as any).peak_months as number[] | undefined
+    const seasons = getSeasonsFromMonths(peakMonths)
+
+    return {
+      id: row.id,
+      offeringId: row.offering_id,
+      varietyId: row.variety_id,
+      productId: row.product_id,
+      regionId: row.region_id,
+      status: row.status,
+      statusMessage: row.status_message,
+      harvestStart: row.harvest_start,
+      harvestEnd: row.harvest_end,
+      optimalStart: row.optimal_start,
+      optimalEnd: row.optimal_end,
+      daysUntilStart: row.days_until_start,
+      confidence: row.confidence,
+      distanceMiles: getDistanceMiles(userLat, userLon, row.region_lat, row.region_lon),
+      category: row.category,
+      subcategory: row.subcategory,
+      modelType: row.model_type,
+      qualityTier: row.quality_tier,
+      brix: row.brix,
+      acidity: row.acidity,
+      brixAcidRatio: row.brix_acid_ratio,
+      isHeritage: row.is_heritage,
+      isNonGmo: row.is_non_gmo,
+      productDisplayName: row.product_display_name,
+      varietyDisplayName: row.variety_display_name,
+      regionDisplayName: row.region_display_name,
+      state: row.state,
+      flavorProfile: row.flavor_profile,
+      flavorNotes: row.flavor_notes,
+      regionLat: row.region_lat,
+      regionLon: row.region_lon,
+      seasons,
+    }
+  })
 
   // Apply distance filter
   if (filters.maxDistance) {
@@ -273,10 +308,11 @@ async function fetchFallback(
     statusFilter: string[] | null
     categoryFilter: string[] | null
     subcategoryFilter: string[] | null
+    seasonsFilter: Season[] | null
   }
 ): Promise<DiscoveryResult[]> {
   // Import the products catalog
-  const { REGIONAL_OFFERINGS, getOfferingDetails } = await import('@/lib/constants/products')
+  const { REGIONAL_OFFERINGS, getOfferingDetails, getSeasonsFromMonths } = await import('@/lib/constants/products')
 
   const today = new Date()
   const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
@@ -405,6 +441,15 @@ async function fetchFallback(
     // Apply status filter
     if (filters.statusFilter && !filters.statusFilter.includes(status)) continue
 
+    // Get seasons from peakMonths
+    const seasons = getSeasonsFromMonths(peakMonths)
+
+    // Apply seasons filter
+    if (filters.seasonsFilter && filters.seasonsFilter.length > 0) {
+      const hasMatchingSeason = seasons.some(s => filters.seasonsFilter!.includes(s))
+      if (!hasMatchingSeason) continue
+    }
+
     results.push({
       id: offering.id,
       offeringId: offering.id,
@@ -437,6 +482,7 @@ async function fetchFallback(
       flavorNotes: offering.flavorNotes || null,
       regionLat: region.latitude,
       regionLon: region.longitude,
+      seasons,
     })
   }
 
