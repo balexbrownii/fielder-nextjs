@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Header } from '@/components/Header'
-import { useGeolocation, DEFAULT_LOCATION, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
+import { useGeolocation, DEFAULT_LOCATION } from '@/lib/hooks/useGeolocation'
 import { useFilters } from '@/lib/hooks/useFilters'
 import { FilterSidebar } from '@/components/FilterSidebar'
 
@@ -115,6 +116,7 @@ function formatDate(dateStr?: string | null): string {
 }
 
 export default function DiscoverPage() {
+  const searchParams = useSearchParams()
   const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(true)
   const filterState = useFilters()
   const [data, setData] = useState<DiscoveryData | null>(null)
@@ -127,6 +129,36 @@ export default function DiscoverPage() {
   const [zipError, setZipError] = useState<string | null>(null)
   const [lookingUpZip, setLookingUpZip] = useState(false)
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false)
+  const [urlParamsProcessed, setUrlParamsProcessed] = useState(false)
+
+  // Handle URL params for lat/lon (e.g., from product page "View Live Status" link)
+  useEffect(() => {
+    if (urlParamsProcessed) return
+
+    const urlLat = searchParams.get('lat')
+    const urlLon = searchParams.get('lon')
+
+    if (urlLat && urlLon) {
+      const lat = parseFloat(urlLat)
+      const lon = parseFloat(urlLon)
+
+      if (!isNaN(lat) && !isNaN(lon)) {
+        // Reverse geocode to get location name
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+          .then(res => res.json())
+          .then(data => {
+            const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county
+            const state = data.address?.state
+            const name = city && state ? `${city}, ${state}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`
+            setManualLocation({ lat, lon, name })
+          })
+          .catch(() => {
+            setManualLocation({ lat, lon, name: `${lat.toFixed(2)}, ${lon.toFixed(2)}` })
+          })
+      }
+    }
+    setUrlParamsProcessed(true)
+  }, [searchParams, urlParamsProcessed])
 
   useEffect(() => {
     if (location && !manualLocation) {
@@ -177,10 +209,6 @@ export default function DiscoverPage() {
     }
   }, [zipInput])
 
-  const handleCitySelect = useCallback((city: typeof FALLBACK_CITIES[0]) => {
-    setManualLocation(city)
-    setShowLocationPicker(false)
-  }, [])
 
   const handleUseDeviceLocation = useCallback(() => {
     setManualLocation(null)
@@ -269,21 +297,10 @@ export default function DiscoverPage() {
                   </div>
                   <button
                     onClick={handleUseDeviceLocation}
-                    className="w-full text-left px-3 py-2 font-mono text-sm text-stone-600 hover:bg-stone-100 mb-2"
+                    className="w-full text-left px-3 py-2 font-mono text-sm text-[var(--color-accent)] hover:underline"
                   >
-                    Use my location
+                    Use my current location
                   </button>
-                  <div className="border-t border-stone-200 pt-2 max-h-40 overflow-y-auto">
-                    {FALLBACK_CITIES.slice(0, 8).map((city) => (
-                      <button
-                        key={city.name}
-                        onClick={() => handleCitySelect(city)}
-                        className="w-full text-left px-3 py-1.5 font-mono text-sm text-stone-600 hover:bg-stone-100"
-                      >
-                        {city.name}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </>
             )}

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Header } from '@/components/Header'
-import { useGeolocation, DEFAULT_LOCATION, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
+import { useGeolocation, DEFAULT_LOCATION } from '@/lib/hooks/useGeolocation'
 
 interface DiscoveryItem {
   id: string
@@ -118,7 +118,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [currentSeason, setCurrentSeason] = useState<string>('winter')
   const [locationName, setLocationName] = useState<string>(DEFAULT_LOCATION.name)
-  const [showCityPicker, setShowCityPicker] = useState(false)
+  const [showLocationInput, setShowLocationInput] = useState(false)
+  const [zipCode, setZipCode] = useState('')
+  const [zipError, setZipError] = useState<string | null>(null)
+  const [zipLoading, setZipLoading] = useState(false)
   const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false)
 
@@ -179,9 +182,45 @@ export default function Home() {
     }
   }, [geoLocation, manualLocation, fetchDiscoveryData])
 
-  const handleCitySelect = (city: typeof FALLBACK_CITIES[0]) => {
-    setManualLocation({ lat: city.lat, lon: city.lon, name: city.name })
-    setShowCityPicker(false)
+  const handleZipSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!zipCode.trim()) return
+
+    setZipError(null)
+    setZipLoading(true)
+
+    try {
+      // Use OpenStreetMap Nominatim to geocode zip code
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zipCode)}&country=US&format=json&limit=1`
+      )
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        const result = data[0]
+        const lat = parseFloat(result.lat)
+        const lon = parseFloat(result.lon)
+
+        // Get city name from display_name (e.g., "32789, Orlando, Orange County, Florida, United States")
+        const parts = result.display_name.split(', ')
+        const cityName = parts[1] && parts[3] ? `${parts[1]}, ${STATE_ABBREVS[parts[3]] || parts[3]}` : `Zip ${zipCode}`
+
+        setManualLocation({ lat, lon, name: cityName })
+        setShowLocationInput(false)
+        setZipCode('')
+      } else {
+        setZipError('Zip code not found. Please try again.')
+      }
+    } catch {
+      setZipError('Unable to look up zip code. Please try again.')
+    } finally {
+      setZipLoading(false)
+    }
+  }
+
+  const handleUseMyLocation = () => {
+    requestLocation()
+    setShowLocationInput(false)
   }
 
   const atPeakDisplay = atPeak.slice(0, 6)
@@ -189,7 +228,7 @@ export default function Home() {
   const approachingDisplay = approaching.slice(0, 4)
 
   return (
-    <div className="min-h-screen bg-[#f5f3ef]">
+    <div className="min-h-screen bg-[var(--color-cream)]">
       <Header />
 
       {/* Hero Section */}
@@ -202,7 +241,7 @@ export default function Home() {
             <h1 className="font-serif text-4xl sm:text-5xl text-stone-900 leading-tight">
               What&apos;s Fresh Near{' '}
               <button
-                onClick={() => setShowCityPicker(!showCityPicker)}
+                onClick={() => setShowLocationInput(!showLocationInput)}
                 className="text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] transition-colors border-b-2 border-dashed border-[var(--color-accent)]/40 hover:border-[var(--color-accent)]"
               >
                 {locationName}
@@ -213,29 +252,38 @@ export default function Home() {
             </p>
           </div>
 
-          {/* City Picker */}
-          {showCityPicker && (
-            <div className="mt-6 p-6 bg-[var(--color-cream)] border border-stone-300 shadow-md max-w-md">
-              <p className="font-mono text-xs uppercase tracking-widest text-stone-500 mb-4">Choose a location</p>
-              <div className="grid grid-cols-2 gap-2">
-                {FALLBACK_CITIES.slice(0, 10).map(city => (
-                  <button
-                    key={city.name}
-                    onClick={() => handleCitySelect(city)}
-                    className="text-left px-3 py-2 font-mono text-sm hover:bg-stone-100 transition-colors text-stone-700"
-                  >
-                    {city.name}
-                  </button>
-                ))}
-              </div>
-              {geoError && (
+          {/* Zip Code Input */}
+          {showLocationInput && (
+            <div className="mt-6 p-6 bg-[var(--color-cream)] border border-stone-300 shadow-md max-w-sm">
+              <p className="font-mono text-xs uppercase tracking-widest text-stone-500 mb-4">Enter your zip code</p>
+              <form onSubmit={handleZipSubmit} className="space-y-3">
+                <input
+                  type="text"
+                  value={zipCode}
+                  onChange={(e) => setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                  placeholder="e.g., 32789"
+                  className="w-full px-4 py-3 border border-stone-300 bg-white font-mono text-lg text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]"
+                  maxLength={5}
+                  pattern="[0-9]{5}"
+                  inputMode="numeric"
+                />
+                {zipError && (
+                  <p className="text-sm text-red-600">{zipError}</p>
+                )}
                 <button
-                  onClick={() => { requestLocation(); setShowCityPicker(false) }}
-                  className="mt-4 w-full text-center font-mono text-sm text-[var(--color-accent)] hover:underline"
+                  type="submit"
+                  disabled={zipCode.length !== 5 || zipLoading}
+                  className="w-full py-3 bg-[var(--color-accent)] text-white font-mono text-sm uppercase tracking-wider hover:bg-[var(--color-accent-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Use my location
+                  {zipLoading ? 'Looking up...' : 'Update Location'}
                 </button>
-              )}
+              </form>
+              <button
+                onClick={handleUseMyLocation}
+                className="mt-4 w-full text-center font-mono text-sm text-[var(--color-accent)] hover:underline"
+              >
+                Use my current location
+              </button>
             </div>
           )}
         </div>
