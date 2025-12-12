@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Header } from '@/components/Header'
 import { useGeolocation, DEFAULT_LOCATION, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
 import { useFilters } from '@/lib/hooks/useFilters'
 import { FilterSidebar } from '@/components/FilterSidebar'
-import { formatDistance } from '@/lib/utils/distance'
 
 interface DiscoveryItem {
   id: string
@@ -35,6 +35,7 @@ interface DiscoveryItem {
   productDisplayName: string
   varietyDisplayName: string
   regionDisplayName: string
+  regionSlug: string
   state: string
   flavorProfile: string | null
   flavorNotes: string | null
@@ -53,15 +54,57 @@ interface DiscoveryData {
   timestamp: string
 }
 
-// Category colors for placeholder images
-const categoryGradients: Record<string, string> = {
-  fruit: 'from-red-100 to-orange-100',
-  vegetable: 'from-green-100 to-emerald-100',
-  nut: 'from-amber-100 to-yellow-100',
-  meat: 'from-rose-100 to-red-100',
-  dairy: 'from-blue-100 to-sky-100',
-  honey: 'from-yellow-100 to-amber-100',
-  processed: 'from-stone-100 to-stone-200',
+// High-quality food photography from Unsplash (free to use)
+const PRODUCT_IMAGES: Record<string, string> = {
+  // Citrus
+  orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=400&h=300&fit=crop',
+  grapefruit: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=400&h=300&fit=crop',
+  lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&h=300&fit=crop',
+  tangerine: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400&h=300&fit=crop',
+  lime: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&h=300&fit=crop',
+  // Stone fruit
+  peach: 'https://images.unsplash.com/photo-1629226182803-39e0fbeb0c37?w=400&h=300&fit=crop',
+  cherry: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?w=400&h=300&fit=crop',
+  plum: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=400&h=300&fit=crop',
+  apricot: 'https://images.unsplash.com/photo-1592681820643-80e26e3c9f2f?w=400&h=300&fit=crop',
+  nectarine: 'https://images.unsplash.com/photo-1629226182803-39e0fbeb0c37?w=400&h=300&fit=crop',
+  // Pome fruit
+  apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=300&fit=crop',
+  pear: 'https://images.unsplash.com/photo-1514756331096-242fdeb70d4a?w=400&h=300&fit=crop',
+  // Berries
+  strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&h=300&fit=crop',
+  blueberry: 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=400&h=300&fit=crop',
+  raspberry: 'https://images.unsplash.com/photo-1577003833619-76bbd7f82948?w=400&h=300&fit=crop',
+  blackberry: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400&h=300&fit=crop',
+  // Vegetables
+  tomato: 'https://images.unsplash.com/photo-1546470427-227c7369a9b6?w=400&h=300&fit=crop',
+  pepper: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&h=300&fit=crop',
+  carrot: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&h=300&fit=crop',
+  potato: 'https://images.unsplash.com/photo-1518977676601-b53f82afe52a?w=400&h=300&fit=crop',
+  onion: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400&h=300&fit=crop',
+  garlic: 'https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=400&h=300&fit=crop',
+  // Nuts
+  pecan: 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=400&h=300&fit=crop',
+  walnut: 'https://images.unsplash.com/photo-1563412885-139e4045ec60?w=400&h=300&fit=crop',
+  almond: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&h=300&fit=crop',
+  // Meat & Dairy
+  pork: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400&h=300&fit=crop',
+  chicken: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=300&fit=crop',
+  eggs: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=300&fit=crop',
+  // Honey & Processed
+  honey: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&h=300&fit=crop',
+  maple_syrup: 'https://images.unsplash.com/photo-1589496933738-f5c27bc146e3?w=400&h=300&fit=crop',
+  // Default fallbacks by category
+  fruit: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=300&fit=crop',
+  vegetable: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop',
+  nut: 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=400&h=300&fit=crop',
+  meat: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400&h=300&fit=crop',
+  dairy: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=300&fit=crop',
+  processed: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&h=300&fit=crop',
+}
+
+function getProductImage(productId: string, category: string): string {
+  return PRODUCT_IMAGES[productId] || PRODUCT_IMAGES[category] || PRODUCT_IMAGES.fruit
 }
 
 export default function DiscoverPage() {
@@ -70,8 +113,6 @@ export default function DiscoverPage() {
   const [data, setData] = useState<DiscoveryData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Location picker state
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
   const [locationName, setLocationName] = useState<string | null>(null)
@@ -79,10 +120,9 @@ export default function DiscoverPage() {
   const [zipError, setZipError] = useState<string | null>(null)
   const [lookingUpZip, setLookingUpZip] = useState(false)
 
-  // Reverse geocode to get location name from coords
+  // Reverse geocode to get location name
   useEffect(() => {
     if (location && !manualLocation) {
-      // Try to get city name from coordinates using Nominatim
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${location.lat}&lon=${location.lon}&format=json`)
         .then(res => res.json())
         .then(data => {
@@ -90,17 +130,12 @@ export default function DiscoverPage() {
           const state = data.address?.state
           if (city && state) {
             setLocationName(`${city}, ${state}`)
-          } else if (city) {
-            setLocationName(city)
           }
         })
-        .catch(() => {
-          // Silently fail - we'll just show "your location"
-        })
+        .catch(() => {})
     }
   }, [location?.lat, location?.lon, manualLocation])
 
-  // Use manual location, then actual location, or fall back to default if geo denied
   const activeLocation = useMemo(() => {
     if (manualLocation) return manualLocation
     if (location) return { ...location, name: locationName || 'your location' }
@@ -108,47 +143,39 @@ export default function DiscoverPage() {
     return null
   }, [location?.lat, location?.lon, geoError, manualLocation, locationName])
 
-  // Handle zip code lookup
   const handleZipLookup = useCallback(async () => {
     if (!zipInput || zipInput.length < 5) {
-      setZipError('Please enter a valid 5-digit ZIP code')
+      setZipError('Enter a valid 5-digit ZIP')
       return
     }
-
     setLookingUpZip(true)
     setZipError(null)
-
     try {
-      // Use Nominatim to geocode ZIP code
       const res = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${zipInput}&country=US&format=json&limit=1`)
       const data = await res.json()
-
       if (data && data.length > 0) {
-        const result = data[0]
         setManualLocation({
-          lat: parseFloat(result.lat),
-          lon: parseFloat(result.lon),
-          name: result.display_name.split(',').slice(0, 2).join(',').trim()
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon),
+          name: data[0].display_name.split(',').slice(0, 2).join(',').trim()
         })
         setShowLocationPicker(false)
         setZipInput('')
       } else {
-        setZipError('ZIP code not found. Try a nearby city instead.')
+        setZipError('ZIP not found')
       }
     } catch {
-      setZipError('Failed to look up ZIP code. Try again.')
+      setZipError('Lookup failed')
     } finally {
       setLookingUpZip(false)
     }
   }, [zipInput])
 
-  // Handle city selection
   const handleCitySelect = useCallback((city: typeof FALLBACK_CITIES[0]) => {
     setManualLocation(city)
     setShowLocationPicker(false)
   }, [])
 
-  // Use device location
   const handleUseDeviceLocation = useCallback(() => {
     setManualLocation(null)
     setLocationName(null)
@@ -156,15 +183,12 @@ export default function DiscoverPage() {
     setShowLocationPicker(false)
   }, [requestLocation])
 
-  // Fetch discovery data when location or filters change
+  // Fetch data
   useEffect(() => {
     if (!activeLocation) return
-
     setLoading(true)
     setError(null)
-
     const queryString = filterState.buildQueryString(activeLocation.lat, activeLocation.lon)
-
     fetch(`/api/discover?${queryString}`)
       .then(res => res.json())
       .then(result => {
@@ -186,108 +210,66 @@ export default function DiscoverPage() {
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Hero Section */}
-        <div className="mb-10 text-center lg:text-left">
-          <h1 className="font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
-            What&apos;s Fresh Near You
+        {/* Header */}
+        <div className="mb-10">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-semibold text-stone-900">
+            Discover Fresh Produce
           </h1>
-          <p className="mt-4 text-lg text-stone-600">
-            Discover local harvests at their peak, sorted by distance
-          </p>
 
-          {/* Location indicator - clickable button */}
+          {/* Location Button */}
           {activeLocation && (
-            <div className="mt-6 relative inline-block">
+            <div className="mt-4 relative inline-block">
               <button
                 onClick={() => setShowLocationPicker(!showLocationPicker)}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm ring-1 ring-stone-200/50 hover:ring-stone-300 hover:shadow-md transition-all active:scale-[0.98]"
+                className="inline-flex items-center gap-2 text-stone-600 hover:text-[var(--color-accent)] transition-colors"
               >
-                <LocationIcon className="h-4 w-4 text-[var(--color-accent)]" />
-                {activeLocation.name === 'your location'
-                  ? 'Near your location'
-                  : activeLocation.name === DEFAULT_LOCATION.name
-                    ? `Using ${activeLocation.name} (default)`
-                    : `Near ${activeLocation.name}`
-                }
-                <ChevronDownIcon className="h-4 w-4 text-stone-400" />
+                <LocationIcon className="h-4 w-4" />
+                <span className="underline decoration-dotted underline-offset-2">
+                  {activeLocation.name === 'your location' ? 'Near you' : activeLocation.name}
+                </span>
               </button>
 
-              {/* Location Picker Modal */}
+              {/* Location Picker */}
               {showLocationPicker && (
                 <>
-                  {/* Backdrop */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowLocationPicker(false)}
-                  />
-
-                  {/* Modal */}
-                  <div className="absolute left-0 top-full mt-2 z-50 w-80 rounded-2xl bg-white p-5 shadow-xl ring-1 ring-stone-200">
-                    <h3 className="font-semibold text-stone-900 mb-4">Change Location</h3>
-
-                    {/* ZIP Code Entry */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-stone-600 mb-2">
-                        Enter ZIP Code
-                      </label>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowLocationPicker(false)} />
+                  <div className="absolute left-0 top-full mt-2 z-50 w-72 rounded-xl bg-white p-4 shadow-xl ring-1 ring-stone-200">
+                    <div className="mb-3">
                       <div className="flex gap-2">
                         <input
                           type="text"
                           value={zipInput}
                           onChange={(e) => setZipInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                          placeholder="e.g., 32801"
-                          className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] outline-none"
+                          placeholder="ZIP code"
+                          className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
                           onKeyDown={(e) => e.key === 'Enter' && handleZipLookup()}
                         />
                         <button
                           onClick={handleZipLookup}
                           disabled={lookingUpZip}
-                          className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-dark)] transition-colors disabled:opacity-50"
+                          className="rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-800"
                         >
-                          {lookingUpZip ? '...' : 'Go'}
+                          Go
                         </button>
                       </div>
-                      {zipError && (
-                        <p className="mt-2 text-xs text-red-600">{zipError}</p>
-                      )}
+                      {zipError && <p className="mt-1 text-xs text-red-600">{zipError}</p>}
                     </div>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="flex-1 h-px bg-stone-200" />
-                      <span className="text-xs text-stone-400">or</span>
-                      <div className="flex-1 h-px bg-stone-200" />
-                    </div>
-
-                    {/* Use Device Location */}
                     <button
                       onClick={handleUseDeviceLocation}
-                      className="w-full flex items-center gap-3 rounded-lg border border-stone-200 px-4 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors mb-4"
+                      className="w-full text-left px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 rounded-lg mb-2"
                     >
-                      <CrosshairIcon className="h-5 w-5 text-[var(--color-accent)]" />
-                      Use my device location
+                      Use my location
                     </button>
-
-                    {/* Popular Cities */}
-                    <div>
-                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-2">
-                        Popular Cities
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                        {FALLBACK_CITIES.map((city) => (
-                          <button
-                            key={city.name}
-                            onClick={() => handleCitySelect(city)}
-                            className={`text-left rounded-lg px-3 py-2 text-sm transition-colors ${
-                              activeLocation.name === city.name
-                                ? 'bg-[var(--color-accent)] text-white'
-                                : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
-                            }`}
-                          >
-                            {city.name}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="border-t border-stone-100 pt-2 max-h-40 overflow-y-auto">
+                      {FALLBACK_CITIES.slice(0, 8).map((city) => (
+                        <button
+                          key={city.name}
+                          onClick={() => handleCitySelect(city)}
+                          className="w-full text-left px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50 rounded"
+                        >
+                          {city.name}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </>
@@ -296,126 +278,110 @@ export default function DiscoverPage() {
           )}
         </div>
 
-        {/* Main Content with Sidebar */}
+        {/* Main Content */}
         <div className="flex gap-8">
-          {/* Filter Sidebar */}
-          <FilterSidebar
-            filterState={filterState}
-            categoryCounts={data?.categoryCounts || {}}
-          />
+          <FilterSidebar filterState={filterState} categoryCounts={data?.categoryCounts || {}} />
 
-          {/* Results Area */}
           <div className="flex-1 min-w-0">
-            {/* Loading State */}
+            {/* Loading */}
             {(geoLoading || loading) && (
               <div className="flex flex-col items-center justify-center py-24">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-stone-200 border-t-[var(--color-accent)]" />
-                <p className="mt-4 text-stone-600">
-                  {geoLoading ? 'Finding your location...' : 'Loading fresh harvests...'}
-                </p>
+                <div className="h-10 w-10 animate-spin rounded-full border-3 border-stone-200 border-t-stone-900" />
+                <p className="mt-4 text-stone-500">Loading...</p>
               </div>
             )}
 
-            {/* Error State */}
+            {/* Error */}
             {error && (
-              <div className="rounded-2xl bg-red-50 p-8 text-center ring-1 ring-red-100">
-                <p className="text-red-700 font-medium">{error}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="mt-4 rounded-full bg-red-100 px-6 py-2.5 text-sm font-medium text-red-700 hover:bg-red-200 transition-colors active:scale-[0.98]"
-                >
-                  Try again
-                </button>
+              <div className="rounded-xl bg-red-50 p-6 text-center">
+                <p className="text-red-700">{error}</p>
               </div>
             )}
 
             {/* Results */}
             {data && !loading && (
-              <>
-                {/* Results summary */}
-                <div className="mb-8 flex items-center justify-between">
-                  <p className="text-sm text-stone-500">
-                    {data.totalResults} items found
-                  </p>
-                </div>
-
-                {/* At Peak Now */}
+              <div className="space-y-12">
+                {/* At Peak */}
                 {data.atPeak.length > 0 && (
-                  <ResultSection
-                    title="At Peak Now"
-                    subtitle={`${data.atPeak.length} harvests at perfect ripeness`}
-                    status="peak"
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <section>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-peak)]" />
+                      <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">
+                        At Peak ({data.atPeak.length})
+                      </h2>
+                    </div>
+                    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                       {data.atPeak.map((item) => (
-                        <ProductCard key={item.id} item={item} isPeak />
+                        <ProductCard key={item.id} item={item} status="peak" />
                       ))}
                     </div>
-                  </ResultSection>
+                  </section>
                 )}
 
                 {/* In Season */}
                 {data.inSeason.length > 0 && (
-                  <ResultSection
-                    title="In Season"
-                    subtitle={`${data.inSeason.length} items available now`}
-                    status="season"
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <section>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-season)]" />
+                      <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">
+                        In Season ({data.inSeason.length})
+                      </h2>
+                    </div>
+                    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                       {data.inSeason.map((item) => (
-                        <ProductCard key={item.id} item={item} />
+                        <ProductCard key={item.id} item={item} status="season" />
                       ))}
                     </div>
-                  </ResultSection>
+                  </section>
                 )}
 
-                {/* Coming Soon */}
+                {/* Approaching */}
                 {data.approaching.length > 0 && (
-                  <ResultSection
-                    title="Coming Soon"
-                    subtitle="Ready in the next few weeks"
-                    status="approaching"
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <section>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-approaching)]" />
+                      <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">
+                        Coming Soon ({data.approaching.length})
+                      </h2>
+                    </div>
+                    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                       {data.approaching.map((item) => (
-                        <ComingSoonCard key={item.id} item={item} />
+                        <ProductCard key={item.id} item={item} status="approaching" />
                       ))}
                     </div>
-                  </ResultSection>
+                  </section>
                 )}
 
                 {/* Off Season */}
                 {data.offSeason.length > 0 && filterState.filters.status.includes('off_season') && (
-                  <ResultSection
-                    title="Off Season"
-                    subtitle={`${data.offSeason.length} items not currently available`}
-                    status="off"
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <section>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="h-2.5 w-2.5 rounded-full bg-stone-400" />
+                      <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">
+                        Off Season ({data.offSeason.length})
+                      </h2>
+                    </div>
+                    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                       {data.offSeason.map((item) => (
-                        <OffSeasonCard key={item.id} item={item} />
+                        <ProductCard key={item.id} item={item} status="off" />
                       ))}
                     </div>
-                  </ResultSection>
+                  </section>
                 )}
 
-                {/* Empty State */}
+                {/* Empty */}
                 {data.totalResults === 0 && (
-                  <div className="rounded-2xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200/50">
-                    <div className="text-5xl mb-4">🔍</div>
-                    <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">No results found</h3>
-                    <p className="mt-2 text-stone-600">
-                      Try adjusting your filters or expanding your search area.
-                    </p>
+                  <div className="text-center py-16">
+                    <p className="text-stone-600">No results found. Try adjusting your filters.</p>
                     <button
                       onClick={() => filterState.resetFilters()}
-                      className="mt-6 rounded-full bg-[var(--color-accent)] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
+                      className="mt-4 text-[var(--color-accent)] hover:underline"
                     >
                       Reset filters
                     </button>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -424,218 +390,75 @@ export default function DiscoverPage() {
   )
 }
 
-interface ResultSectionProps {
-  title: string
-  subtitle: string
-  status: 'peak' | 'season' | 'approaching' | 'off'
-  children: React.ReactNode
-}
+function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off' }) {
+  const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
+  const imageUrl = getProductImage(item.productId, item.category)
 
-function ResultSection({ title, subtitle, status, children }: ResultSectionProps) {
-  const statusConfig = {
-    peak: { bg: 'bg-[var(--color-peak-light)]', text: 'text-[var(--color-peak)]', dot: 'bg-[var(--color-peak)]' },
-    season: { bg: 'bg-[var(--color-season-light)]', text: 'text-[var(--color-season)]', dot: 'bg-[var(--color-season)]' },
-    approaching: { bg: 'bg-[var(--color-approaching-light)]', text: 'text-[var(--color-approaching)]', dot: 'bg-[var(--color-approaching)]' },
-    off: { bg: 'bg-[var(--color-off-light)]', text: 'text-[var(--color-off)]', dot: 'bg-[var(--color-off)]' },
+  const statusColors = {
+    peak: 'bg-[var(--color-peak)] text-white',
+    season: 'bg-[var(--color-season)] text-white',
+    approaching: 'bg-[var(--color-approaching)] text-white',
+    off: 'bg-stone-400 text-white',
   }
 
-  const config = statusConfig[status]
+  const statusLabels = {
+    peak: 'At Peak',
+    season: 'In Season',
+    approaching: item.daysUntilStart ? `${item.daysUntilStart}d` : 'Soon',
+    off: 'Off Season',
+  }
 
   return (
-    <section className="mb-12">
-      <div className="flex items-center gap-3 mb-6">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${config.bg}`}>
-          <span className={`h-3 w-3 rounded-full ${config.dot}`} />
-        </div>
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">{title}</h2>
-          <p className="text-sm text-stone-500">{subtitle}</p>
-        </div>
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function ProductCard({ item, isPeak }: { item: DiscoveryItem; isPeak?: boolean }) {
-  const gradient = categoryGradients[item.category] || categoryGradients.fruit
-
-  return (
-    <div
-      className={`group relative overflow-hidden rounded-2xl bg-white shadow-sm transition-all hover:shadow-lg active:scale-[0.98] ${
-        isPeak ? 'ring-2 ring-[var(--color-peak)]' : 'ring-1 ring-stone-200/50 hover:ring-stone-300'
-      }`}
+    <Link
+      href={href}
+      className={`group block rounded-xl bg-white overflow-hidden shadow-sm ring-1 ring-stone-200/50 transition-all hover:shadow-lg hover:ring-stone-300 ${status === 'off' ? 'opacity-60' : ''}`}
     >
-      {/* Placeholder image area */}
-      <div className={`relative h-32 bg-gradient-to-br ${gradient}`}>
-        {/* Peak badge */}
-        {isPeak && (
-          <div className="absolute top-3 right-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-peak)] px-3 py-1 text-xs font-bold text-white shadow-sm">
-              AT PEAK
-            </span>
-          </div>
-        )}
-
-        {/* Category label */}
-        <div className="absolute bottom-3 left-3">
-          <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-stone-600 backdrop-blur-sm">
-            {item.subcategory.replace('_', ' ')}
+      {/* Image */}
+      <div className="relative h-40 bg-stone-100">
+        <Image
+          src={imageUrl}
+          alt={item.varietyDisplayName}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+        />
+        {/* Status Badge */}
+        <div className="absolute top-3 right-3">
+          <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${statusColors[status]}`}>
+            {statusLabels[status]}
           </span>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        {/* Product name */}
+      <div className="p-4">
         <h3 className="font-semibold text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
           {item.varietyDisplayName}
         </h3>
-        <p className="text-sm text-stone-500 mt-0.5">{item.productDisplayName}</p>
+        <p className="text-sm text-stone-500">{item.productDisplayName}</p>
 
-        {/* Location & Distance */}
-        <div className="mt-3 flex items-center gap-2 text-sm text-stone-600">
-          <LocationIcon className="h-4 w-4 text-stone-400" />
-          <span>{item.regionDisplayName}, {item.state}</span>
-          <span className="text-stone-300">·</span>
-          <span className={`font-medium ${isPeak ? 'text-[var(--color-peak)]' : 'text-[var(--color-accent)]'}`}>
-            {formatDistance(item.distanceMiles)}
-          </span>
+        {/* Flavor Profile */}
+        {item.flavorProfile && (
+          <p className="mt-2 text-sm text-stone-600 line-clamp-2">{item.flavorProfile}</p>
+        )}
+
+        {/* Location */}
+        <div className="mt-3 flex items-center justify-between text-sm">
+          <span className="text-stone-500">{item.regionDisplayName}, {item.state}</span>
+          <span className="font-medium text-stone-700">{item.distanceMiles} mi</span>
         </div>
 
-        {/* Status message */}
-        {item.statusMessage && (
-          <p className="mt-3 text-sm text-stone-600 line-clamp-2">{item.statusMessage}</p>
-        )}
-
-        {/* Harvest window */}
-        {item.harvestStart && item.harvestEnd && (
-          <div className="mt-4 rounded-xl bg-stone-50 p-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-stone-500">Harvest</span>
-              <span className="font-medium text-stone-700">
-                {formatDate(item.harvestStart)} – {formatDate(item.harvestEnd)}
-              </span>
-            </div>
-            {item.optimalStart && item.optimalEnd && (
-              <div className="mt-1.5 flex justify-between text-sm">
-                <span className="text-stone-500">Peak</span>
-                <span className="font-medium text-[var(--color-peak)]">
-                  {formatDate(item.optimalStart)} – {formatDate(item.optimalEnd)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Quality indicators */}
-        {item.brix && (
-          <div className="mt-3 flex items-center gap-3 text-xs text-stone-500">
-            <span className="flex items-center gap-1">
-              <span className="font-medium text-stone-700">Brix:</span> {item.brix}°
-            </span>
-            {item.brixAcidRatio && (
-              <span className="flex items-center gap-1">
-                <span className="font-medium text-stone-700">Ratio:</span> {item.brixAcidRatio}:1
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Tags */}
-        {(item.isHeritage || item.isNonGmo || item.qualityTier) && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {item.isHeritage && (
-              <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                Heritage
-              </span>
-            )}
-            {item.isNonGmo && (
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                Non-GMO
-              </span>
-            )}
-            {item.qualityTier && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                {item.qualityTier}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ComingSoonCard({ item }: { item: DiscoveryItem }) {
-  const gradient = categoryGradients[item.category] || categoryGradients.fruit
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/50 transition-all hover:shadow-md hover:ring-stone-300 active:scale-[0.98]">
-      {/* Placeholder image area */}
-      <div className={`relative h-24 bg-gradient-to-br ${gradient} opacity-60`}>
-        {item.daysUntilStart && (
-          <div className="absolute top-3 right-3">
-            <span className="rounded-full bg-[var(--color-approaching)] px-3 py-1 text-xs font-bold text-white shadow-sm">
-              ~{item.daysUntilStart} days
+        {/* Quality Tier */}
+        {item.qualityTier && status !== 'off' && (
+          <div className="mt-2">
+            <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+              {item.qualityTier}
             </span>
           </div>
         )}
-
-        <div className="absolute bottom-3 left-3">
-          <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-stone-600 backdrop-blur-sm">
-            {item.subcategory.replace('_', ' ')}
-          </span>
-        </div>
       </div>
-
-      <div className="p-5">
-        <h3 className="font-semibold text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
-          {item.varietyDisplayName}
-        </h3>
-        <p className="text-sm text-stone-500 mt-0.5">{item.productDisplayName}</p>
-
-        <div className="mt-3 flex items-center gap-2 text-sm text-stone-600">
-          <LocationIcon className="h-4 w-4 text-stone-400" />
-          <span>{item.regionDisplayName}, {item.state}</span>
-          <span className="text-stone-300">·</span>
-          <span className="font-medium text-[var(--color-approaching)]">{formatDistance(item.distanceMiles)}</span>
-        </div>
-
-        <p className="mt-3 text-sm text-stone-500">
-          {item.statusMessage || `Expected harvest: ${item.harvestStart ? formatDate(item.harvestStart) : 'Soon'}`}
-        </p>
-      </div>
-    </div>
+    </Link>
   )
-}
-
-function OffSeasonCard({ item }: { item: DiscoveryItem }) {
-  return (
-    <div className="rounded-2xl bg-stone-50 p-5 ring-1 ring-stone-200/50 opacity-60">
-      <span className="text-xs font-medium text-stone-400 uppercase tracking-wide">
-        {item.subcategory.replace('_', ' ')}
-      </span>
-      <h3 className="mt-1 font-semibold text-stone-600">{item.varietyDisplayName}</h3>
-      <p className="text-sm text-stone-400">{item.productDisplayName}</p>
-
-      <div className="mt-3 flex items-center gap-2 text-sm text-stone-400">
-        <LocationIcon className="h-4 w-4 text-stone-300" />
-        <span>{item.regionDisplayName}, {item.state}</span>
-        <span className="text-stone-300">·</span>
-        <span>{formatDistance(item.distanceMiles)}</span>
-      </div>
-
-      <p className="mt-3 text-sm text-stone-400">
-        {item.statusMessage || 'Currently off season'}
-      </p>
-    </div>
-  )
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function LocationIcon({ className }: { className?: string }) {
@@ -643,24 +466,6 @@ function LocationIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  )
-}
-
-function ChevronDownIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  )
-}
-
-function CrosshairIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" strokeWidth={2} />
-      <path strokeLinecap="round" strokeWidth={2} d="M12 2v4m0 12v4M2 12h4m12 0h4" />
-      <circle cx="12" cy="12" r="3" strokeWidth={2} />
     </svg>
   )
 }
