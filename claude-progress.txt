@@ -7,21 +7,45 @@ ORIENTATION:
 
 WORK COMPLETED:
 - F001 (Project Setup): Created Next.js project with TypeScript, Tailwind, App Router
-- Installed @supabase/supabase-js and date-fns
-- Created feature_list.json harness for multi-session tracking
-- Git initialized Flask prototype (e20214b)
+- F002 (Supabase Schema): Created SQL migrations and seed scripts
+- F003 (TypeScript Services): Ported GDD calculator, weather service, harvest predictor
+- F004 (API Routes): Created /api/predict, /api/crops, /api/regions, /api/weather/gdd
+- F005 (Consumer Discovery UI): Landing page, /discover with region selector and crop cards
+- F006 (Farm Dashboard UI): /farm with admin code protection and dashboard skeleton
 
-TEST RESULTS:
-- N/A (infrastructure only)
+KEY FILES CREATED:
+- supabase/migrations/001_initial_schema.sql - Full database schema
+- supabase/seed/001_regions.sql - 21 US growing regions
+- supabase/seed/002_crops.sql - 15 crops with GDD targets
+- src/lib/constants/gdd-targets.ts - Crop GDD requirements
+- src/lib/constants/regions.ts - Region data with coordinates
+- src/lib/services/gdd-calculator.ts - GDD calculation utilities
+- src/lib/services/weather.ts - Open-Meteo API integration
+- src/lib/services/harvest-predictor.ts - Harvest window prediction
+- src/app/api/predict/route.ts - Prediction API
+- src/app/api/crops/route.ts - Crops list API
+- src/app/api/regions/route.ts - Regions list API
+- src/app/api/weather/gdd/route.ts - GDD data API
+- src/app/page.tsx - Landing page
+- src/app/discover/page.tsx - Consumer discovery UI
+- src/app/farm/page.tsx - Farm dashboard UI
 
 GIT COMMITS:
-- Flask: e20214b - Initial commit: Flask prototype
-- Next.js: auto-initialized by create-next-app
+- e20214b - Initial commit: Flask prototype (in fielder_project)
+- f843259 - Add Supabase schema, GDD targets, and region constants
+- c9e0cea - Add weather service and harvest predictor
+- 9441d55 - Add API routes for predictions, crops, regions, weather
+- 4ca01fe - Add consumer discovery and farm dashboard UI
 
 BLOCKERS:
 - None
 
 NEXT STEPS:
-- F002: Set up Supabase schema and seed scripts
-- Create lib/services directory structure
-- Port Python constants (GDD targets, regions)
+- F007: Vercel Deployment
+  1. Create GitHub repository
+  2. Push fielder-nextjs to GitHub
+  3. Connect Vercel to repo
+  4. Add environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  5. Deploy
+- Create Supabase project and run migrations
+- Connect UI to Supabase for farm data persistence
