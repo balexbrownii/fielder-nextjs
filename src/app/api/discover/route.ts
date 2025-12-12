@@ -81,15 +81,28 @@ export async function GET(request: NextRequest) {
 
   try {
     let results: DiscoveryResult[]
+    let source = 'computed'
 
     if (supabase) {
-      // Query pre-computed predictions from Supabase
-      results = await fetchFromSupabase(lat, lon, {
-        maxDistance,
-        statusFilter,
-        categoryFilter,
-        subcategoryFilter,
-      })
+      // Try to query pre-computed predictions from Supabase
+      try {
+        results = await fetchFromSupabase(lat, lon, {
+          maxDistance,
+          statusFilter,
+          categoryFilter,
+          subcategoryFilter,
+        })
+        source = 'supabase'
+      } catch (supabaseError) {
+        // Supabase query failed (table may not exist), fall back to computation
+        console.log('[Discover] Supabase query failed, falling back to computation:', supabaseError)
+        results = await fetchFallback(lat, lon, {
+          maxDistance,
+          statusFilter,
+          categoryFilter,
+          subcategoryFilter,
+        })
+      }
     } else {
       // Fall back to on-the-fly computation
       console.log('[Discover] Supabase not configured, using fallback computation')
@@ -120,7 +133,7 @@ export async function GET(request: NextRequest) {
       offSeason,
       totalResults: results.length,
       categoryCounts,
-      source: supabase ? 'supabase' : 'computed',
+      source,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
