@@ -1,0 +1,87 @@
+{
+  "project": "fielder-nextjs",
+  "description": "Next.js + Supabase migration of Fielder harvest prediction platform",
+  "features": [
+    {
+      "id": "F001",
+      "name": "Project Setup",
+      "passes": true,
+      "steps": [
+        "Initialize Next.js with TypeScript + Tailwind",
+        "Install Supabase client",
+        "Configure project structure"
+      ],
+      "completion_notes": "Created fielder-nextjs with App Router, TypeScript, Tailwind, @supabase/supabase-js"
+    },
+    {
+      "id": "F002",
+      "name": "Supabase Schema",
+      "passes": false,
+      "steps": [
+        "Create Supabase project",
+        "Define schema: crops, cultivars, rootstocks, regions",
+        "Define schema: farms, farm_crops, farm_availability",
+        "Create seed scripts from DataLoader"
+      ]
+    },
+    {
+      "id": "F003",
+      "name": "TypeScript Services",
+      "passes": false,
+      "steps": [
+        "Port GDD calculator",
+        "Port weather service (Open-Meteo)",
+        "Port quality predictor (10 crop models)",
+        "Port harvest predictor"
+      ]
+    },
+    {
+      "id": "F004",
+      "name": "API Routes",
+      "passes": false,
+      "steps": [
+        "POST /api/predict - harvest window",
+        "POST /api/quality - quality prediction",
+        "GET /api/weather/gdd - GDD data",
+        "GET /api/crops - list crops",
+        "GET /api/regions - list regions",
+        "CRUD /api/farms - farm management"
+      ]
+    },
+    {
+      "id": "F005",
+      "name": "Consumer Discovery UI",
+      "passes": false,
+      "steps": [
+        "Region selector component",
+        "Crop filter component",
+        "At Peak Now grid",
+        "Harvest calendar view",
+        "Farm cards"
+      ]
+    },
+    {
+      "id": "F006",
+      "name": "Farm Dashboard UI",
+      "passes": false,
+      "steps": [
+        "Admin code protection",
+        "Profile editor",
+        "Crop manager",
+        "Availability toggle",
+        "Pricing editor"
+      ]
+    },
+    {
+      "id": "F007",
+      "name": "Vercel Deployment",
+      "passes": false,
+      "steps": [
+        "Push to GitHub",
+        "Connect Vercel",
+        "Configure environment variables",
+        "Deploy"
+      ]
+    }
+  ]
+}
