@@ -14,8 +14,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { weatherService } from '@/lib/services/weather'
-import { harvestPredictor } from '@/lib/services/harvest-predictor'
 import { US_GROWING_REGIONS } from '@/lib/constants/regions'
 import { getDistanceMiles } from '@/lib/utils/distance'
 import type { DailyPrediction } from '@/lib/supabase/types'
@@ -127,8 +125,14 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Discovery error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
-      { error: 'Failed to fetch discovery data', details: String(error) },
+      {
+        error: 'Failed to fetch discovery data',
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     )
   }
@@ -241,6 +245,7 @@ async function fetchFromSupabase(
 
 /**
  * Fallback: compute predictions on-the-fly (when Supabase not configured)
+ * Uses estimated GDD from climate data instead of live weather API to avoid timeouts
  */
 async function fetchFallback(
   userLat: number,
@@ -256,22 +261,32 @@ async function fetchFallback(
   const { REGIONAL_OFFERINGS, getOfferingDetails } = await import('@/lib/constants/products')
 
   const today = new Date()
-  const referenceDate = new Date(today.getFullYear(), 0, 1)
-  const todayStr = today.toISOString().slice(0, 10)
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
 
-  // Fetch GDD data for all regions
+  // Estimate GDD from region's historical climate data (annualGdd50 / 365 * dayOfYear)
+  // This avoids slow weather API calls that timeout on Vercel
   const regionGddMap = new Map<string, { totalGdd: number; avgDailyGdd: number }>()
 
-  await Promise.all(
-    Object.keys(US_GROWING_REGIONS).map(async (regionId) => {
-      try {
-        const gddData = await weatherService.getGddAccumulation(regionId, referenceDate, 50)
-        regionGddMap.set(regionId, gddData)
-      } catch (e) {
-        console.warn(`[Discover] Failed to get GDD for ${regionId}:`, e)
-      }
-    })
-  )
+  for (const [regionId, region] of Object.entries(US_GROWING_REGIONS)) {
+    // Use region's historical annual GDD or estimate from frost-free days
+    const annualGdd = region.climate?.annualGdd50 || (region.climate?.frostFreeDays || 200) * 15
+    const avgDailyGdd = annualGdd / 365
+
+    // Estimate current accumulated GDD based on day of year
+    // Account for growing season (after last frost, before first frost)
+    const lastFrostDoy = region.climate?.avgLastFrostDoy || 90
+    const firstFrostDoy = region.climate?.avgFirstFrostDoy || 300
+
+    let effectiveDays = 0
+    if (dayOfYear > lastFrostDoy && dayOfYear < firstFrostDoy) {
+      effectiveDays = dayOfYear - lastFrostDoy
+    } else if (dayOfYear >= firstFrostDoy) {
+      effectiveDays = firstFrostDoy - lastFrostDoy
+    }
+
+    const totalGdd = Math.round(effectiveDays * avgDailyGdd)
+    regionGddMap.set(regionId, { totalGdd, avgDailyGdd })
+  }
 
   const results: DiscoveryResult[] = []
 
