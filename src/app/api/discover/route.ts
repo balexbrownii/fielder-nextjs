@@ -275,19 +275,8 @@ async function fetchFallback(
     subcategoryFilter: string[] | null
   }
 ): Promise<DiscoveryResult[]> {
-  console.log('[Fallback] Starting fallback computation')
-
   // Import the products catalog
-  let REGIONAL_OFFERINGS: any[], getOfferingDetails: any
-  try {
-    const products = await import('@/lib/constants/products')
-    REGIONAL_OFFERINGS = products.REGIONAL_OFFERINGS
-    getOfferingDetails = products.getOfferingDetails
-    console.log('[Fallback] Imported products:', REGIONAL_OFFERINGS?.length || 0, 'offerings')
-  } catch (e) {
-    console.error('[Fallback] Failed to import products:', e)
-    throw new Error(`Failed to import products: ${e instanceof Error ? e.message : String(e)}`)
-  }
+  const { REGIONAL_OFFERINGS, getOfferingDetails } = await import('@/lib/constants/products')
 
   const today = new Date()
   const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
