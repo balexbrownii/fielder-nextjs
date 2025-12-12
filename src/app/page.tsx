@@ -5,41 +5,46 @@ import Link from 'next/link'
 import { Header } from '@/components/Header'
 import { useGeolocation, DEFAULT_LOCATION, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
 
-interface DiscoveryResult {
+// Match actual API response structure
+interface DiscoveryItem {
   id: string
+  offeringId: string
+  varietyId: string
   productId: string
-  productName: string
-  cultivarId: string
-  cultivarName: string
-  category: string
   regionId: string
-  regionName: string
-  regionState: string
-  distance: number
   status: 'at_peak' | 'in_season' | 'approaching' | 'off_season'
   statusMessage: string
-  harvestStart?: string
-  harvestEnd?: string
-  optimalStart?: string
-  optimalEnd?: string
-  flavorProfile?: string
-  flavorNotes?: string
+  harvestStart?: string | null
+  harvestEnd?: string | null
+  optimalStart?: string | null
+  optimalEnd?: string | null
+  daysUntilStart?: number | null
+  confidence: number
+  distanceMiles: number
+  category: string
+  subcategory: string
+  modelType: string
   qualityTier?: string
+  productDisplayName: string
+  varietyDisplayName: string
+  regionDisplayName: string
+  state: string
+  flavorProfile?: string
+  flavorNotes?: string | null
   seasons: string[]
 }
 
 interface DiscoveryResponse {
-  results: DiscoveryResult[]
-  location: { lat: number; lon: number; name?: string }
-  currentSeason: string
+  atPeak: DiscoveryItem[]
+  inSeason: DiscoveryItem[]
+  approaching: DiscoveryItem[]
+  offSeason: DiscoveryItem[]
+  totalResults: number
+  categoryCounts: Record<string, number>
   seasonCounts: Record<string, number>
-  statusCounts: {
-    at_peak: number
-    in_season: number
-    approaching: number
-    off_season: number
-  }
-  total: number
+  currentSeason: string
+  source: string
+  timestamp: string
 }
 
 const SEASON_LABELS: Record<string, string> = {
@@ -58,11 +63,13 @@ const SEASON_MESSAGES: Record<string, string> = {
 
 export default function Home() {
   const { location: geoLocation, loading: geoLoading, error: geoError, requestLocation } = useGeolocation(true)
-  const [results, setResults] = useState<DiscoveryResult[]>([])
+  const [atPeak, setAtPeak] = useState<DiscoveryItem[]>([])
+  const [inSeason, setInSeason] = useState<DiscoveryItem[]>([])
+  const [approaching, setApproaching] = useState<DiscoveryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentSeason, setCurrentSeason] = useState<string>('winter')
-  const [statusCounts, setStatusCounts] = useState({ at_peak: 0, in_season: 0, approaching: 0, off_season: 0 })
+  const [totalResults, setTotalResults] = useState(0)
   const [locationName, setLocationName] = useState<string | null>(null)
   const [showCityPicker, setShowCityPicker] = useState(false)
   const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
@@ -84,12 +91,11 @@ export default function Home() {
       if (!response.ok) throw new Error('Failed to fetch')
 
       const data: DiscoveryResponse = await response.json()
-      setResults(data.results)
-      setCurrentSeason(data.currentSeason)
-      setStatusCounts(data.statusCounts)
-      if (data.location.name) {
-        setLocationName(data.location.name)
-      }
+      setAtPeak(data.atPeak || [])
+      setInSeason(data.inSeason || [])
+      setApproaching(data.approaching || [])
+      setCurrentSeason(data.currentSeason || 'winter')
+      setTotalResults(data.totalResults || 0)
     } catch {
       setError('Unable to load fresh produce data')
     } finally {
@@ -106,7 +112,6 @@ export default function Home() {
           const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county
           const state = data.address?.state
           if (city && state) {
-            // Abbreviate state
             const stateAbbr = STATE_ABBREVS[state] || state
             setLocationName(`${city}, ${stateAbbr}`)
           }
@@ -120,7 +125,6 @@ export default function Home() {
     if (activeLocation) {
       fetchDiscoveryData(activeLocation.lat, activeLocation.lon)
     } else if (!geoLoading && geoError) {
-      // Fall back to default location
       fetchDiscoveryData(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon)
       setLocationName(DEFAULT_LOCATION.name)
     }
@@ -132,9 +136,9 @@ export default function Home() {
     setShowCityPicker(false)
   }
 
-  const atPeakResults = results.filter(r => r.status === 'at_peak').slice(0, 6)
-  const inSeasonResults = results.filter(r => r.status === 'in_season').slice(0, 6)
-  const approachingResults = results.filter(r => r.status === 'approaching').slice(0, 4)
+  const atPeakDisplay = atPeak.slice(0, 6)
+  const inSeasonDisplay = inSeason.slice(0, 6)
+  const approachingDisplay = approaching.slice(0, 4)
 
   return (
     <div className="min-h-screen bg-[var(--color-cream)]">
@@ -192,22 +196,22 @@ export default function Home() {
           {/* Quick Stats */}
           {!loading && (
             <div className="mt-6 flex flex-wrap gap-4 text-sm">
-              {statusCounts.at_peak > 0 && (
+              {atPeak.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-[var(--color-peak)]">
                   <span className="h-2 w-2 rounded-full bg-current" />
-                  {statusCounts.at_peak} at peak
+                  {atPeak.length} at peak
                 </span>
               )}
-              {statusCounts.in_season > 0 && (
+              {inSeason.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-[var(--color-season)]">
                   <span className="h-2 w-2 rounded-full bg-current" />
-                  {statusCounts.in_season} in season
+                  {inSeason.length} in season
                 </span>
               )}
-              {statusCounts.approaching > 0 && (
+              {approaching.length > 0 && (
                 <span className="inline-flex items-center gap-1.5 text-[var(--color-approaching)]">
                   <span className="h-2 w-2 rounded-full bg-current" />
-                  {statusCounts.approaching} coming soon
+                  {approaching.length} coming soon
                 </span>
               )}
             </div>
@@ -224,7 +228,7 @@ export default function Home() {
         ) : (
           <div className="space-y-12">
             {/* At Peak Section */}
-            {atPeakResults.length > 0 && (
+            {atPeakDisplay.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -233,14 +237,14 @@ export default function Home() {
                       At Peak Now
                     </h2>
                   </div>
-                  {statusCounts.at_peak > 6 && (
+                  {atPeak.length > 6 && (
                     <Link href="/discover?status=at_peak" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
-                      See all {statusCounts.at_peak}
+                      See all {atPeak.length}
                     </Link>
                   )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {atPeakResults.map(item => (
+                  {atPeakDisplay.map(item => (
                     <ProductCard key={item.id} item={item} />
                   ))}
                 </div>
@@ -248,7 +252,7 @@ export default function Home() {
             )}
 
             {/* In Season Section */}
-            {inSeasonResults.length > 0 && (
+            {inSeasonDisplay.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -257,14 +261,14 @@ export default function Home() {
                       In Season
                     </h2>
                   </div>
-                  {statusCounts.in_season > 6 && (
+                  {inSeason.length > 6 && (
                     <Link href="/discover?status=in_season" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
-                      See all {statusCounts.in_season}
+                      See all {inSeason.length}
                     </Link>
                   )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {inSeasonResults.map(item => (
+                  {inSeasonDisplay.map(item => (
                     <ProductCard key={item.id} item={item} />
                   ))}
                 </div>
@@ -272,7 +276,7 @@ export default function Home() {
             )}
 
             {/* Coming Soon Section */}
-            {approachingResults.length > 0 && (
+            {approachingDisplay.length > 0 && (
               <section>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -281,14 +285,14 @@ export default function Home() {
                       Coming Soon
                     </h2>
                   </div>
-                  {statusCounts.approaching > 4 && (
+                  {approaching.length > 4 && (
                     <Link href="/discover?status=approaching" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
-                      See all {statusCounts.approaching}
+                      See all {approaching.length}
                     </Link>
                   )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {approachingResults.map(item => (
+                  {approachingDisplay.map(item => (
                     <ProductCardCompact key={item.id} item={item} />
                   ))}
                 </div>
@@ -296,7 +300,7 @@ export default function Home() {
             )}
 
             {/* No Results */}
-            {results.length === 0 && (
+            {totalResults === 0 && (
               <div className="text-center py-16">
                 <p className="text-lg text-stone-600">No produce data available for this location yet.</p>
                 <Link href="/predictions" className="mt-4 inline-block text-[var(--color-accent)] hover:underline">
@@ -308,7 +312,7 @@ export default function Home() {
         )}
 
         {/* Explore More */}
-        {!loading && results.length > 0 && (
+        {!loading && totalResults > 0 && (
           <section className="mt-16 pt-12 border-t border-stone-200">
             <div className="text-center max-w-xl mx-auto">
               <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">
@@ -374,8 +378,8 @@ export default function Home() {
   )
 }
 
-function ProductCard({ item }: { item: DiscoveryResult }) {
-  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.cultivarId.replace(/_/g, '-').toLowerCase()}`
+function ProductCard({ item }: { item: DiscoveryItem }) {
+  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
 
   return (
     <Link
@@ -386,10 +390,10 @@ function ProductCard({ item }: { item: DiscoveryResult }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-stone-900 group-hover:text-[var(--color-accent)] transition-colors truncate">
-            {item.cultivarName}
+            {item.varietyDisplayName}
           </h3>
           <p className="text-sm text-stone-500 truncate">
-            {item.productName}
+            {item.productDisplayName}
           </p>
         </div>
         <StatusBadge status={item.status} />
@@ -405,10 +409,10 @@ function ProductCard({ item }: { item: DiscoveryResult }) {
       {/* Region & Distance */}
       <div className="mt-4 flex items-center justify-between text-sm">
         <span className="text-stone-500 truncate">
-          {item.regionName}, {item.regionState}
+          {item.regionDisplayName}, {item.state}
         </span>
         <span className="text-stone-400 flex-shrink-0 ml-2">
-          {item.distance} mi
+          {item.distanceMiles} mi
         </span>
       </div>
 
@@ -422,8 +426,8 @@ function ProductCard({ item }: { item: DiscoveryResult }) {
   )
 }
 
-function ProductCardCompact({ item }: { item: DiscoveryResult }) {
-  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.cultivarId.replace(/_/g, '-').toLowerCase()}`
+function ProductCardCompact({ item }: { item: DiscoveryItem }) {
+  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
 
   return (
     <Link
@@ -434,10 +438,10 @@ function ProductCardCompact({ item }: { item: DiscoveryResult }) {
         <StatusDot status={item.status} />
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-stone-900 group-hover:text-[var(--color-accent)] transition-colors truncate text-sm">
-            {item.cultivarName}
+            {item.varietyDisplayName}
           </h3>
           <p className="text-xs text-stone-500 truncate">
-            {item.regionName} &bull; {item.distance} mi
+            {item.regionDisplayName} &bull; {item.distanceMiles} mi
           </p>
         </div>
       </div>
@@ -524,7 +528,7 @@ function LocationIcon({ className }: { className?: string }) {
   )
 }
 
-function formatDate(dateStr?: string): string {
+function formatDate(dateStr?: string | null): string {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
