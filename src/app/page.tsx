@@ -28,6 +28,7 @@ interface DiscoveryItem {
   productDisplayName: string
   varietyDisplayName: string
   regionDisplayName: string
+  regionSlug: string
   state: string
   flavorProfile?: string
   flavorNotes?: string | null
@@ -386,7 +387,7 @@ export default function Home() {
 }
 
 function ProductCard({ item }: { item: DiscoveryItem }) {
-  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
+  const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
 
   return (
     <Link
@@ -434,7 +435,7 @@ function ProductCard({ item }: { item: DiscoveryItem }) {
 }
 
 function ProductCardCompact({ item }: { item: DiscoveryItem }) {
-  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
+  const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
 
   return (
     <Link

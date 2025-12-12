@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { US_GROWING_REGIONS } from '@/lib/constants/regions'
+import { ALL_GROWING_REGIONS } from '@/lib/constants/growing-regions'
 import { getDistanceMiles } from '@/lib/utils/distance'
 import type { DailyPrediction } from '@/lib/supabase/types'
 
@@ -56,6 +57,7 @@ interface DiscoveryResult {
   productDisplayName: string
   varietyDisplayName: string
   regionDisplayName: string
+  regionSlug: string
   state: string
   flavorProfile: string | null
   flavorNotes: string | null
@@ -237,6 +239,9 @@ async function fetchFromSupabase(
     // Derive seasons from peak_months if available in the row
     const peakMonths = (row as any).peak_months as number[] | undefined
     const seasons = getSeasonsFromMonths(peakMonths)
+    // Look up region slug from constants
+    const regionData = ALL_GROWING_REGIONS[row.region_id as keyof typeof ALL_GROWING_REGIONS]
+    const regionSlug = regionData?.slug || row.region_id.replace(/_/g, '-')
 
     return {
       id: row.id,
@@ -265,6 +270,7 @@ async function fetchFromSupabase(
       productDisplayName: row.product_display_name,
       varietyDisplayName: row.variety_display_name,
       regionDisplayName: row.region_display_name,
+      regionSlug,
       state: row.state,
       flavorProfile: row.flavor_profile,
       flavorNotes: row.flavor_notes,
@@ -353,6 +359,9 @@ async function fetchFallback(
     const { variety, product, gddToMaturity, gddToPeak, gddWindow, baseTemp, peakMonths } = details
     const region = US_GROWING_REGIONS[offering.regionId]
     if (!region) continue
+    // Look up region slug from ALL_GROWING_REGIONS
+    const regionMeta = ALL_GROWING_REGIONS[offering.regionId as keyof typeof ALL_GROWING_REGIONS]
+    const regionSlug = regionMeta?.slug || offering.regionId.replace(/_/g, '-')
 
     // Apply category filter
     if (filters.categoryFilter && !filters.categoryFilter.includes(product.category)) continue
@@ -477,6 +486,7 @@ async function fetchFallback(
       productDisplayName: product.displayName,
       varietyDisplayName: variety.displayName,
       regionDisplayName: region.displayName,
+      regionSlug,
       state: region.state,
       flavorProfile: variety.flavorProfile || null,
       flavorNotes: offering.flavorNotes || null,
