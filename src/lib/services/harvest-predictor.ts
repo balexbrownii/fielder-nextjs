@@ -187,18 +187,18 @@ class HarvestPredictor {
 
     const today = new Date()
 
-    // Calculate days to key milestones
+    // Calculate days to key milestones (can be negative if already past)
     const daysToMaturity = avgDailyGdd > 0
-      ? Math.max(0, Math.round((gddToMaturity - currentGdd) / avgDailyGdd))
+      ? Math.round((gddToMaturity - currentGdd) / avgDailyGdd)
       : 0
     const daysToPeak = avgDailyGdd > 0
-      ? Math.max(0, Math.round((gddToPeak - currentGdd) / avgDailyGdd))
+      ? Math.round((gddToPeak - currentGdd) / avgDailyGdd)
       : 0
     const daysToEnd = avgDailyGdd > 0
-      ? Math.max(0, Math.round((gddToMaturity + gddWindow - currentGdd) / avgDailyGdd))
+      ? Math.round((gddToMaturity + gddWindow - currentGdd) / avgDailyGdd)
       : 0
 
-    // Calculate dates
+    // Calculate dates (negative days = already started in the past)
     const harvestStart = addDays(today, daysToMaturity)
     const peakCenter = addDays(today, daysToPeak)
     const harvestEnd = addDays(today, daysToEnd)
