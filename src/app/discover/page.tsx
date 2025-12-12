@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/Header'
-import { useGeolocation, DEFAULT_LOCATION } from '@/lib/hooks/useGeolocation'
+import { useGeolocation, DEFAULT_LOCATION, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
 import { useFilters } from '@/lib/hooks/useFilters'
 import { FilterSidebar } from '@/components/FilterSidebar'
 import { formatDistance } from '@/lib/utils/distance'
@@ -65,18 +65,96 @@ const categoryGradients: Record<string, string> = {
 }
 
 export default function DiscoverPage() {
-  const { location, error: geoError, loading: geoLoading } = useGeolocation(true)
+  const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(true)
   const filterState = useFilters()
   const [data, setData] = useState<DiscoveryData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Use actual location, or fall back to default (Orlando, FL) if geo denied
+  // Location picker state
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
+  const [locationName, setLocationName] = useState<string | null>(null)
+  const [zipInput, setZipInput] = useState('')
+  const [zipError, setZipError] = useState<string | null>(null)
+  const [lookingUpZip, setLookingUpZip] = useState(false)
+
+  // Reverse geocode to get location name from coords
+  useEffect(() => {
+    if (location && !manualLocation) {
+      // Try to get city name from coordinates using Nominatim
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${location.lat}&lon=${location.lon}&format=json`)
+        .then(res => res.json())
+        .then(data => {
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county
+          const state = data.address?.state
+          if (city && state) {
+            setLocationName(`${city}, ${state}`)
+          } else if (city) {
+            setLocationName(city)
+          }
+        })
+        .catch(() => {
+          // Silently fail - we'll just show "your location"
+        })
+    }
+  }, [location?.lat, location?.lon, manualLocation])
+
+  // Use manual location, then actual location, or fall back to default if geo denied
   const activeLocation = useMemo(() => {
-    if (location) return { ...location, name: 'your location' }
+    if (manualLocation) return manualLocation
+    if (location) return { ...location, name: locationName || 'your location' }
     if (geoError) return DEFAULT_LOCATION
     return null
-  }, [location?.lat, location?.lon, geoError])
+  }, [location?.lat, location?.lon, geoError, manualLocation, locationName])
+
+  // Handle zip code lookup
+  const handleZipLookup = useCallback(async () => {
+    if (!zipInput || zipInput.length < 5) {
+      setZipError('Please enter a valid 5-digit ZIP code')
+      return
+    }
+
+    setLookingUpZip(true)
+    setZipError(null)
+
+    try {
+      // Use Nominatim to geocode ZIP code
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${zipInput}&country=US&format=json&limit=1`)
+      const data = await res.json()
+
+      if (data && data.length > 0) {
+        const result = data[0]
+        setManualLocation({
+          lat: parseFloat(result.lat),
+          lon: parseFloat(result.lon),
+          name: result.display_name.split(',').slice(0, 2).join(',').trim()
+        })
+        setShowLocationPicker(false)
+        setZipInput('')
+      } else {
+        setZipError('ZIP code not found. Try a nearby city instead.')
+      }
+    } catch {
+      setZipError('Failed to look up ZIP code. Try again.')
+    } finally {
+      setLookingUpZip(false)
+    }
+  }, [zipInput])
+
+  // Handle city selection
+  const handleCitySelect = useCallback((city: typeof FALLBACK_CITIES[0]) => {
+    setManualLocation(city)
+    setShowLocationPicker(false)
+  }, [])
+
+  // Use device location
+  const handleUseDeviceLocation = useCallback(() => {
+    setManualLocation(null)
+    setLocationName(null)
+    requestLocation()
+    setShowLocationPicker(false)
+  }, [requestLocation])
 
   // Fetch discovery data when location or filters change
   useEffect(() => {
@@ -117,11 +195,103 @@ export default function DiscoverPage() {
             Discover local harvests at their peak, sorted by distance
           </p>
 
-          {/* Location indicator */}
+          {/* Location indicator - clickable button */}
           {activeLocation && (
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm ring-1 ring-stone-200/50">
-              <LocationIcon className="h-4 w-4 text-[var(--color-accent)]" />
-              {activeLocation.name === 'your location' ? 'Near your location' : `Showing results for ${activeLocation.name}`}
+            <div className="mt-6 relative inline-block">
+              <button
+                onClick={() => setShowLocationPicker(!showLocationPicker)}
+                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm ring-1 ring-stone-200/50 hover:ring-stone-300 hover:shadow-md transition-all active:scale-[0.98]"
+              >
+                <LocationIcon className="h-4 w-4 text-[var(--color-accent)]" />
+                {activeLocation.name === 'your location'
+                  ? 'Near your location'
+                  : activeLocation.name === DEFAULT_LOCATION.name
+                    ? `Using ${activeLocation.name} (default)`
+                    : `Near ${activeLocation.name}`
+                }
+                <ChevronDownIcon className="h-4 w-4 text-stone-400" />
+              </button>
+
+              {/* Location Picker Modal */}
+              {showLocationPicker && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowLocationPicker(false)}
+                  />
+
+                  {/* Modal */}
+                  <div className="absolute left-0 top-full mt-2 z-50 w-80 rounded-2xl bg-white p-5 shadow-xl ring-1 ring-stone-200">
+                    <h3 className="font-semibold text-stone-900 mb-4">Change Location</h3>
+
+                    {/* ZIP Code Entry */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-stone-600 mb-2">
+                        Enter ZIP Code
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={zipInput}
+                          onChange={(e) => setZipInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                          placeholder="e.g., 32801"
+                          className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] outline-none"
+                          onKeyDown={(e) => e.key === 'Enter' && handleZipLookup()}
+                        />
+                        <button
+                          onClick={handleZipLookup}
+                          disabled={lookingUpZip}
+                          className="rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-accent-dark)] transition-colors disabled:opacity-50"
+                        >
+                          {lookingUpZip ? '...' : 'Go'}
+                        </button>
+                      </div>
+                      {zipError && (
+                        <p className="mt-2 text-xs text-red-600">{zipError}</p>
+                      )}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-1 h-px bg-stone-200" />
+                      <span className="text-xs text-stone-400">or</span>
+                      <div className="flex-1 h-px bg-stone-200" />
+                    </div>
+
+                    {/* Use Device Location */}
+                    <button
+                      onClick={handleUseDeviceLocation}
+                      className="w-full flex items-center gap-3 rounded-lg border border-stone-200 px-4 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors mb-4"
+                    >
+                      <CrosshairIcon className="h-5 w-5 text-[var(--color-accent)]" />
+                      Use my device location
+                    </button>
+
+                    {/* Popular Cities */}
+                    <div>
+                      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-2">
+                        Popular Cities
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                        {FALLBACK_CITIES.map((city) => (
+                          <button
+                            key={city.name}
+                            onClick={() => handleCitySelect(city)}
+                            className={`text-left rounded-lg px-3 py-2 text-sm transition-colors ${
+                              activeLocation.name === city.name
+                                ? 'bg-[var(--color-accent)] text-white'
+                                : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
+                            }`}
+                          >
+                            {city.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -473,6 +643,24 @@ function LocationIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+
+function CrosshairIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" strokeWidth={2} />
+      <path strokeLinecap="round" strokeWidth={2} d="M12 2v4m0 12v4M2 12h4m12 0h4" />
+      <circle cx="12" cy="12" r="3" strokeWidth={2} />
     </svg>
   )
 }
