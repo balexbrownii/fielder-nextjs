@@ -231,7 +231,7 @@ export default function DiscoverPage() {
           <div className="mt-4 relative inline-block">
             <button
               onClick={() => setShowLocationPicker(!showLocationPicker)}
-              className="inline-flex items-center gap-2 font-mono text-sm text-stone-600 hover:text-[#c41e3a] transition-colors"
+              className="inline-flex items-center gap-2 font-mono text-sm text-stone-600 hover:text-[var(--color-accent)] transition-colors"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -246,7 +246,7 @@ export default function DiscoverPage() {
             {showLocationPicker && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowLocationPicker(false)} />
-                <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-[#fffef9] p-4 shadow-md border border-stone-300">
+                <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-[var(--color-cream)] p-4 shadow-md border border-stone-300">
                   <div className="mb-3">
                     <div className="flex gap-2">
                       <input
@@ -254,7 +254,7 @@ export default function DiscoverPage() {
                         value={zipInput}
                         onChange={(e) => setZipInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
                         placeholder="ZIP code"
-                        className="flex-1 border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-[#c41e3a] bg-white"
+                        className="flex-1 border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-[var(--color-accent)] bg-white"
                         onKeyDown={(e) => e.key === 'Enter' && handleZipLookup()}
                       />
                       <button
@@ -307,7 +307,7 @@ export default function DiscoverPage() {
 
             {/* Error */}
             {error && (
-              <div className="bg-[#fffef9] border border-stone-300 p-6 text-center">
+              <div className="bg-[var(--color-cream)] border border-stone-300 p-6 text-center">
                 <p className="font-serif text-stone-700">{error}</p>
               </div>
             )}
@@ -319,7 +319,7 @@ export default function DiscoverPage() {
                 {data.atPeak.length > 0 && (
                   <section>
                     <div className="mb-8">
-                      <span className="font-mono text-xs uppercase tracking-widest text-[#c41e3a]">
+                      <span className="font-mono text-xs uppercase tracking-widest text-[var(--color-accent)]">
                         At Peak Now
                       </span>
                       <h2 className="mt-1 font-serif text-2xl text-stone-900">
@@ -397,7 +397,7 @@ export default function DiscoverPage() {
                     <p className="font-serif text-stone-600">No results found. Try adjusting your filters.</p>
                     <button
                       onClick={() => filterState.resetFilters()}
-                      className="mt-4 font-mono text-sm text-[#c41e3a] hover:underline uppercase tracking-wider"
+                      className="mt-4 font-mono text-sm text-[var(--color-accent)] hover:underline uppercase tracking-wider"
                     >
                       Reset filters
                     </button>
@@ -417,7 +417,7 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
   const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
 
   return (
-    <Link href={href} className={`group block bg-[#fffef9] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
+    <Link href={href} className={`group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
       {/* Card with padding around image */}
       <div className="p-3">
         {/* Inset Image */}
@@ -432,7 +432,7 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
           {/* Status Badge */}
           {status === 'peak' && (
             <div className="absolute top-2 left-2">
-              <span className="font-mono text-xs uppercase tracking-wider px-2 py-1 bg-[#c41e3a] text-white">
+              <span className="font-mono text-xs uppercase tracking-wider px-2 py-1 bg-[var(--color-accent)] text-white">
                 Peak
               </span>
             </div>
@@ -443,7 +443,7 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
       {/* Content - Notecard Style */}
       <div className="px-4 pb-4">
         {/* Title */}
-        <h3 className="font-serif text-lg text-stone-900 group-hover:text-[#c41e3a] transition-colors">
+        <h3 className="font-serif text-lg text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
           {item.varietyDisplayName}
         </h3>
 
@@ -485,7 +485,7 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
         {/* Quality Tier */}
         {item.qualityTier && status !== 'off' && (
           <div className="mt-3">
-            <span className="font-mono text-xs uppercase tracking-widest text-[#c41e3a]">
+            <span className="font-mono text-xs uppercase tracking-widest text-[var(--color-accent)]">
               {item.qualityTier}
             </span>
           </div>

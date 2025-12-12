@@ -37,7 +37,7 @@ export function FilterSidebar({ filterState, categoryCounts = {} }: FilterSideba
       {/* Mobile: Floating Filter Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-3 text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
+        className="lg:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-sm bg-[var(--color-accent)] px-5 py-3 text-white shadow-lg hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
       >
         <FilterIcon className="h-5 w-5" />
         <span className="font-medium">Filters</span>
@@ -77,7 +77,7 @@ export function FilterSidebar({ filterState, categoryCounts = {} }: FilterSideba
 
       {/* Desktop: Fixed Sidebar */}
       <aside className="hidden lg:block w-72 shrink-0">
-        <div className="sticky top-24 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200/50">
+        <div className="sticky top-24 rounded-sm bg-[var(--color-cream)] p-6 border border-stone-200">
           <FilterContent
             filters={filters}
             setDistance={setDistance}
@@ -120,7 +120,7 @@ function FilterContent({
     <div className={`${isMobile ? 'h-full overflow-y-auto' : ''}`}>
       {/* Header */}
       <div className={`flex items-center justify-between ${isMobile ? 'border-b border-stone-200 px-6 py-4' : 'mb-6'}`}>
-        <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-stone-900">Filters</h3>
+        <h3 className="font-serif text-lg font-normal text-stone-900">Filters</h3>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button
@@ -223,7 +223,7 @@ function FilterContent({
         <div className="border-t border-stone-200 px-6 py-4 bg-[var(--color-cream)]">
           <button
             onClick={onClose}
-            className="w-full rounded-full bg-[var(--color-accent)] py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
+            className="w-full rounded-sm bg-[var(--color-accent)] py-3 text-sm font-medium text-white shadow-lg hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
           >
             Apply Filters
           </button>
@@ -236,7 +236,7 @@ function FilterContent({
 function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-3 text-sm font-semibold text-stone-900">{title}</h4>
+      <h4 className="mb-3 font-mono text-xs uppercase tracking-wider text-stone-500">{title}</h4>
       {children}
     </div>
   )

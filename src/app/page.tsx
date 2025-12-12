@@ -203,7 +203,7 @@ export default function Home() {
               What&apos;s Fresh Near{' '}
               <button
                 onClick={() => setShowCityPicker(!showCityPicker)}
-                className="text-[#c41e3a] hover:text-[#a01830] transition-colors border-b-2 border-dashed border-[#c41e3a]/40 hover:border-[#c41e3a]"
+                className="text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] transition-colors border-b-2 border-dashed border-[var(--color-accent)]/40 hover:border-[var(--color-accent)]"
               >
                 {locationName}
               </button>
@@ -215,7 +215,7 @@ export default function Home() {
 
           {/* City Picker */}
           {showCityPicker && (
-            <div className="mt-6 p-6 bg-[#fffef9] border border-stone-300 shadow-md max-w-md">
+            <div className="mt-6 p-6 bg-[var(--color-cream)] border border-stone-300 shadow-md max-w-md">
               <p className="font-mono text-xs uppercase tracking-widest text-stone-500 mb-4">Choose a location</p>
               <div className="grid grid-cols-2 gap-2">
                 {FALLBACK_CITIES.slice(0, 10).map(city => (
@@ -231,7 +231,7 @@ export default function Home() {
               {geoError && (
                 <button
                   onClick={() => { requestLocation(); setShowCityPicker(false) }}
-                  className="mt-4 w-full text-center font-mono text-sm text-[#c41e3a] hover:underline"
+                  className="mt-4 w-full text-center font-mono text-sm text-[var(--color-accent)] hover:underline"
                 >
                   Use my location
                 </button>
@@ -254,7 +254,7 @@ export default function Home() {
               <section>
                 <div className="flex items-baseline justify-between mb-8">
                   <div>
-                    <span className="font-mono text-xs uppercase tracking-widest text-[#c41e3a]">
+                    <span className="font-mono text-xs uppercase tracking-widest text-[var(--color-accent)]">
                       At Peak Now
                     </span>
                     <h2 className="mt-1 font-serif text-2xl text-stone-900">
@@ -262,7 +262,7 @@ export default function Home() {
                     </h2>
                   </div>
                   {atPeak.length > 6 && (
-                    <Link href="/discover?status=at_peak" className="font-mono text-xs uppercase tracking-wider text-[#c41e3a] hover:underline">
+                    <Link href="/discover?status=at_peak" className="font-mono text-xs uppercase tracking-wider text-[var(--color-accent)] hover:underline">
                       View all
                     </Link>
                   )}
@@ -288,7 +288,7 @@ export default function Home() {
                     </h2>
                   </div>
                   {inSeason.length > 6 && (
-                    <Link href="/discover?status=in_season" className="font-mono text-xs uppercase tracking-wider text-[#c41e3a] hover:underline">
+                    <Link href="/discover?status=in_season" className="font-mono text-xs uppercase tracking-wider text-[var(--color-accent)] hover:underline">
                       View all
                     </Link>
                   )}
@@ -314,7 +314,7 @@ export default function Home() {
                     </h2>
                   </div>
                   {approaching.length > 4 && (
-                    <Link href="/discover?status=approaching" className="font-mono text-xs uppercase tracking-wider text-[#c41e3a] hover:underline">
+                    <Link href="/discover?status=approaching" className="font-mono text-xs uppercase tracking-wider text-[var(--color-accent)] hover:underline">
                       View all
                     </Link>
                   )}
@@ -331,7 +331,7 @@ export default function Home() {
             {atPeak.length === 0 && inSeason.length === 0 && approaching.length === 0 && (
               <div className="text-center py-16">
                 <p className="font-serif text-lg text-stone-600">No produce data available for this location yet.</p>
-                <Link href="/predictions" className="mt-4 inline-block font-mono text-sm text-[#c41e3a] hover:underline">
+                <Link href="/predictions" className="mt-4 inline-block font-mono text-sm text-[var(--color-accent)] hover:underline">
                   Browse by region
                 </Link>
               </div>
@@ -352,7 +352,7 @@ export default function Home() {
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/discover"
-                  className="inline-flex items-center justify-center px-8 py-3 bg-[#c41e3a] text-white font-mono text-sm uppercase tracking-wider hover:bg-[#a01830] transition-colors"
+                  className="inline-flex items-center justify-center px-8 py-3 bg-[var(--color-accent)] text-white font-mono text-sm uppercase tracking-wider hover:bg-[var(--color-accent-dark)] transition-colors"
                 >
                   Browse All Products
                 </Link>
@@ -404,7 +404,7 @@ function ProductCard({ item, showPeakBadge }: { item: DiscoveryItem; showPeakBad
   const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
 
   return (
-    <Link href={href} className="group block bg-[#fffef9] border border-stone-300 shadow-sm hover:shadow-md transition-shadow">
+    <Link href={href} className="group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow">
       {/* Card with padding around image */}
       <div className="p-3">
         {/* Inset Image */}
@@ -419,7 +419,7 @@ function ProductCard({ item, showPeakBadge }: { item: DiscoveryItem; showPeakBad
           {/* Peak Badge */}
           {showPeakBadge && (
             <div className="absolute top-2 left-2">
-              <span className="font-mono text-xs uppercase tracking-wider px-2 py-1 bg-[#c41e3a] text-white">
+              <span className="font-mono text-xs uppercase tracking-wider px-2 py-1 bg-[var(--color-accent)] text-white">
                 Peak
               </span>
             </div>
@@ -430,7 +430,7 @@ function ProductCard({ item, showPeakBadge }: { item: DiscoveryItem; showPeakBad
       {/* Content - Notecard Style */}
       <div className="px-4 pb-4">
         {/* Title */}
-        <h3 className="font-serif text-lg text-stone-900 group-hover:text-[#c41e3a] transition-colors">
+        <h3 className="font-serif text-lg text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
           {item.varietyDisplayName}
         </h3>
 
@@ -466,7 +466,7 @@ function ProductCardSmall({ item }: { item: DiscoveryItem }) {
   const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
 
   return (
-    <Link href={href} className="group block bg-[#fffef9] border border-stone-300 shadow-sm hover:shadow-md transition-shadow">
+    <Link href={href} className="group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow">
       <div className="p-2">
         <div className="relative aspect-square overflow-hidden bg-white border border-stone-200">
           <Image
@@ -479,7 +479,7 @@ function ProductCardSmall({ item }: { item: DiscoveryItem }) {
         </div>
       </div>
       <div className="px-3 pb-3">
-        <h3 className="font-serif text-sm text-stone-900 group-hover:text-[#c41e3a] transition-colors">
+        <h3 className="font-serif text-sm text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
           {item.varietyDisplayName}
         </h3>
         <p className="font-mono text-xs text-stone-500 uppercase tracking-wide">
@@ -500,7 +500,7 @@ function LoadingState() {
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="bg-[#fffef9] border border-stone-300 p-3 animate-pulse">
+            <div key={i} className="bg-[var(--color-cream)] border border-stone-300 p-3 animate-pulse">
               <div className="aspect-[4/3] bg-stone-200" />
               <div className="mt-4 h-5 w-3/4 bg-stone-200" />
               <div className="mt-2 h-4 w-1/2 bg-stone-100" />
@@ -518,7 +518,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
       <p className="font-serif text-lg text-stone-600 mb-4">{message}</p>
       <button
         onClick={onRetry}
-        className="inline-flex items-center px-6 py-3 bg-[#c41e3a] text-white font-mono text-sm uppercase tracking-wider hover:bg-[#a01830] transition-colors"
+        className="inline-flex items-center px-6 py-3 bg-[var(--color-accent)] text-white font-mono text-sm uppercase tracking-wider hover:bg-[var(--color-accent-dark)] transition-colors"
       >
         Try Again
       </button>

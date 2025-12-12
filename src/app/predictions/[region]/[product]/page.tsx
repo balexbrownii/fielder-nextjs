@@ -260,17 +260,17 @@ export default async function ProductPredictionPage({ params }: Props) {
         offering={offering}
       />
 
-      <div className="min-h-screen bg-[#f5f3ef]">
+      <div className="min-h-screen bg-[var(--color-cream)]">
         <Header />
 
         <main className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           {/* Breadcrumb - typewriter style */}
           <nav className="mb-8 font-mono text-xs uppercase tracking-wider text-stone-500">
-            <Link href="/predictions" className="hover:text-[#c41e3a] transition-colors">
+            <Link href="/predictions" className="hover:text-[var(--color-accent)] transition-colors">
               Regions
             </Link>
             <span className="mx-2">/</span>
-            <Link href={`/predictions/${region.slug}`} className="hover:text-[#c41e3a] transition-colors">
+            <Link href={`/predictions/${region.slug}`} className="hover:text-[var(--color-accent)] transition-colors">
               {region.displayName}
             </Link>
             <span className="mx-2">/</span>
@@ -278,9 +278,9 @@ export default async function ProductPredictionPage({ params }: Props) {
           </nav>
 
           {/* Main Recipe Card */}
-          <article className="bg-[#fffef9] border border-stone-300 shadow-md p-6 sm:p-10">
+          <article className="bg-[var(--color-parchment)] border border-stone-300 shadow-md p-6 sm:p-10">
             {/* Card Header - lined paper effect */}
-            <div className="border-b-2 border-[#c41e3a] pb-4 mb-6">
+            <div className="border-b-2 border-[var(--color-accent)] pb-4 mb-6">
               <h1 className="font-serif text-3xl sm:text-4xl text-stone-900">
                 {cultivar.displayName}
               </h1>
@@ -327,11 +327,11 @@ export default async function ProductPredictionPage({ params }: Props) {
 
               {/* Quality */}
               {offering.qualityTier && (
-                <div className="border-l-2 border-[#c41e3a] pl-4">
+                <div className="border-l-2 border-[var(--color-accent)] pl-4">
                   <dt className="font-mono text-xs uppercase tracking-widest text-stone-400 mb-1">
                     Quality
                   </dt>
-                  <dd className="font-serif text-lg text-[#c41e3a] capitalize">
+                  <dd className="font-serif text-lg text-[var(--color-accent)] capitalize">
                     {offering.qualityTier}
                   </dd>
                 </div>
@@ -395,7 +395,7 @@ export default async function ProductPredictionPage({ params }: Props) {
 
             {/* Flavor Profile */}
             {cultivar.flavorProfile && (
-              <div className="mb-8 p-6 bg-[#f5f3ef] border-l-4 border-[#c41e3a]">
+              <div className="mb-8 p-6 bg-[var(--color-cream)] border-l-4 border-[var(--color-accent)]">
                 <p className="font-mono text-xs uppercase tracking-widest text-stone-400 mb-2">
                   Flavor Profile
                 </p>
@@ -456,7 +456,7 @@ export default async function ProductPredictionPage({ params }: Props) {
             <div className="flex flex-wrap gap-4">
               <Link
                 href={`/discover?lat=${region.latitude}&lon=${region.longitude}`}
-                className="inline-flex items-center px-6 py-3 bg-[#c41e3a] text-white font-mono text-sm uppercase tracking-wider hover:bg-[#a01830] transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-[var(--color-accent)] text-white font-mono text-sm uppercase tracking-wider hover:bg-[var(--color-accent-dark)] transition-colors"
               >
                 View Live Status
               </Link>

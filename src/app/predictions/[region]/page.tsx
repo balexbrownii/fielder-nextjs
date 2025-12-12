@@ -50,15 +50,15 @@ function getProductSlug(cultivarId: string): string {
   return cultivarId.replace(/_/g, '-').toLowerCase()
 }
 
-// Category colors for placeholder images
+// Category colors for placeholder images - muted, earthy
 const categoryGradients: Record<string, string> = {
-  fruit: 'from-red-100 to-orange-100',
-  vegetable: 'from-green-100 to-emerald-100',
-  nut: 'from-amber-100 to-yellow-100',
-  meat: 'from-rose-100 to-red-100',
-  dairy: 'from-blue-100 to-sky-100',
-  honey: 'from-yellow-100 to-amber-100',
-  processed: 'from-stone-100 to-stone-200',
+  fruit: 'from-rose-100/80 to-orange-100/60',
+  vegetable: 'from-emerald-100/60 to-stone-100',
+  nut: 'from-amber-100/70 to-stone-100',
+  meat: 'from-rose-100/60 to-stone-100',
+  dairy: 'from-stone-100 to-blue-50/50',
+  honey: 'from-amber-100/60 to-yellow-100/40',
+  processed: 'from-stone-100 to-stone-50',
 }
 
 function ProductCard({ offering, regionSlug }: { offering: RegionalOffering; regionSlug: string }) {
@@ -72,7 +72,7 @@ function ProductCard({ offering, regionSlug }: { offering: RegionalOffering; reg
   return (
     <Link
       href={`/predictions/${regionSlug}/${productSlug}`}
-      className="group relative overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/50 transition-all hover:shadow-lg hover:ring-stone-300 active:scale-[0.98]"
+      className="group relative overflow-hidden rounded-sm bg-[var(--color-cream)] border border-stone-200 shadow-sm transition-all hover:shadow-md hover:border-stone-300 active:scale-[0.99]"
     >
       {/* Placeholder image area */}
       <div className={`relative h-28 bg-gradient-to-br ${gradient}`}>
@@ -80,9 +80,9 @@ function ProductCard({ offering, regionSlug }: { offering: RegionalOffering; reg
         {offering.qualityTier && (
           <div className="absolute top-3 right-3">
             <span
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm ${
+              className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium text-white ${
                 offering.qualityTier === 'exceptional'
-                  ? 'bg-purple-500'
+                  ? 'bg-[var(--color-accent)]'
                   : offering.qualityTier === 'excellent'
                     ? 'bg-[var(--color-peak)]'
                     : 'bg-stone-500'
@@ -95,7 +95,7 @@ function ProductCard({ offering, regionSlug }: { offering: RegionalOffering; reg
 
         {/* Category label */}
         <div className="absolute bottom-3 left-3">
-          <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-stone-600 backdrop-blur-sm">
+          <span className="rounded-sm bg-white/90 px-2 py-0.5 font-mono text-xs uppercase tracking-wider text-stone-600 backdrop-blur-sm">
             {product.category}
           </span>
         </div>
@@ -103,7 +103,7 @@ function ProductCard({ offering, regionSlug }: { offering: RegionalOffering; reg
 
       {/* Content */}
       <div className="p-5">
-        <h3 className="font-semibold text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
+        <h3 className="font-serif font-normal text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
           {cultivar.displayName}
         </h3>
         <p className="text-sm text-stone-500 mt-0.5">{product.displayName}</p>
@@ -121,12 +121,12 @@ function ProductCard({ offering, regionSlug }: { offering: RegionalOffering; reg
         {/* Tags */}
         <div className="mt-3 flex flex-wrap gap-1.5">
           {cultivar.isHeritage && (
-            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+            <span className="rounded-sm bg-[var(--color-accent-light)]/30 px-2 py-0.5 text-xs font-medium text-[var(--color-accent-dark)]">
               Heritage
             </span>
           )}
           {cultivar.isNonGmo && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+            <span className="rounded-sm bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
               Non-GMO
             </span>
           )}
@@ -206,7 +206,10 @@ export default async function RegionPage({ params }: Props) {
 
         {/* Hero Section */}
         <div className="mb-10">
-          <h1 className="font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
+          <p className="font-mono text-xs uppercase tracking-widest text-stone-500 mb-3">
+            Growing Region
+          </p>
+          <h1 className="font-serif text-4xl font-normal tracking-tight text-stone-900 sm:text-5xl">
             {region.displayName}
           </h1>
           <p className="mt-3 text-lg text-stone-600">
@@ -215,21 +218,21 @@ export default async function RegionPage({ params }: Props) {
 
           {/* Climate badges */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <div className="rounded-full bg-[var(--color-peak-light)] px-4 py-2">
-              <span className="text-sm font-medium text-[var(--color-peak)]">
+            <div className="rounded-sm bg-[var(--color-peak-light)] px-3 py-1.5">
+              <span className="font-mono text-xs text-[var(--color-peak)]">
                 {region.climate.frostFreeDays} frost-free days
               </span>
             </div>
             {region.climate.usdaZone && (
-              <div className="rounded-full bg-blue-50 px-4 py-2">
-                <span className="text-sm font-medium text-blue-700">
+              <div className="rounded-sm bg-stone-100 px-3 py-1.5">
+                <span className="font-mono text-xs text-stone-600">
                   USDA Zone {region.climate.usdaZone}
                 </span>
               </div>
             )}
             {region.climate.annualGdd50 && (
-              <div className="rounded-full bg-[var(--color-approaching-light)] px-4 py-2">
-                <span className="text-sm font-medium text-[var(--color-approaching)]">
+              <div className="rounded-sm bg-[var(--color-approaching-light)] px-3 py-1.5">
+                <span className="font-mono text-xs text-[var(--color-approaching)]">
                   {region.climate.annualGdd50.toLocaleString()} GDD/year
                 </span>
               </div>
@@ -243,15 +246,15 @@ export default async function RegionPage({ params }: Props) {
 
         {/* Products */}
         {activeOfferings.length === 0 ? (
-          <div className="rounded-2xl bg-white p-12 text-center shadow-sm ring-1 ring-stone-200/50">
-            <div className="text-5xl mb-4">🌱</div>
-            <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">
+          <div className="rounded-sm bg-[var(--color-parchment)] p-12 text-center border border-stone-200">
+            <div className="text-4xl mb-4">🌱</div>
+            <h3 className="font-serif text-xl font-normal text-stone-900">
               Coming Soon
             </h3>
             <p className="mt-2 text-stone-600">
               No products currently tracked for this region.
             </p>
-            <p className="mt-4 text-sm text-stone-500">
+            <p className="mt-4 font-mono text-xs text-stone-500 uppercase tracking-wider">
               Primary products: {region.primaryProducts.join(', ')}
             </p>
           </div>
@@ -266,10 +269,10 @@ export default async function RegionPage({ params }: Props) {
                   <div className="flex items-center gap-3 mb-6">
                     <span className="text-2xl">{categoryIcons[category]}</span>
                     <div>
-                      <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">
+                      <h2 className="font-serif text-2xl font-normal text-stone-900">
                         {categoryLabels[category] || category}
                       </h2>
-                      <p className="text-sm text-stone-500">
+                      <p className="font-mono text-xs uppercase tracking-wider text-stone-500">
                         {categoryOfferings.length} {categoryOfferings.length === 1 ? 'variety' : 'varieties'}
                       </p>
                     </div>
@@ -286,25 +289,25 @@ export default async function RegionPage({ params }: Props) {
         )}
 
         {/* Region Details */}
-        <section className="mt-16 rounded-2xl bg-white p-6 sm:p-8 shadow-sm ring-1 ring-stone-200/50">
-          <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-stone-900">
+        <section className="mt-16 rounded-sm bg-[var(--color-parchment)] p-6 sm:p-8 border border-stone-200">
+          <h2 className="font-serif text-xl font-normal text-stone-900">
             Region Details
           </h2>
           <dl className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt className="text-sm font-medium text-stone-500">Counties</dt>
+              <dt className="font-mono text-xs uppercase tracking-wider text-stone-500">Counties</dt>
               <dd className="mt-1 text-stone-900">
                 {region.counties.join(', ')}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-stone-500">Coordinates</dt>
+              <dt className="font-mono text-xs uppercase tracking-wider text-stone-500">Coordinates</dt>
               <dd className="mt-1 text-stone-900">
                 {region.latitude.toFixed(2)}°N, {Math.abs(region.longitude).toFixed(2)}°W
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-stone-500">Growing Season</dt>
+              <dt className="font-mono text-xs uppercase tracking-wider text-stone-500">Growing Season</dt>
               <dd className="mt-1 text-stone-900">
                 Day {region.climate.avgLastFrostDoy} – Day{' '}
                 {region.climate.avgFirstFrostDoy}
@@ -312,7 +315,7 @@ export default async function RegionPage({ params }: Props) {
             </div>
             {region.climate.avgChillHours && (
               <div>
-                <dt className="text-sm font-medium text-stone-500">Chill Hours</dt>
+                <dt className="font-mono text-xs uppercase tracking-wider text-stone-500">Chill Hours</dt>
                 <dd className="mt-1 text-stone-900">
                   {region.climate.avgChillHours} hours/winter
                 </dd>
@@ -325,7 +328,7 @@ export default async function RegionPage({ params }: Props) {
         <section className="mt-12 text-center">
           <Link
             href={`/discover?lat=${region.latitude}&lon=${region.longitude}`}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-[var(--color-accent-dark)] hover:shadow-xl hover:shadow-orange-500/30 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-sm bg-[var(--color-accent)] px-8 py-4 text-sm font-medium text-white shadow-lg transition-all hover:bg-[var(--color-accent-dark)] hover:shadow-xl active:scale-[0.98]"
           >
             View Live Status Near {region.displayName}
             <ArrowRightIcon className="h-5 w-5" />
@@ -338,30 +341,30 @@ export default async function RegionPage({ params }: Props) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
             <div>
-              <span className="font-[family-name:var(--font-display)] text-xl font-semibold text-white">
+              <span className="font-serif text-xl text-white">
                 Fielder
               </span>
-              <p className="mt-2 text-sm text-stone-500">
+              <p className="mt-2 text-sm text-stone-400">
                 Fresh produce at peak quality.
               </p>
             </div>
-            <div className="flex gap-8">
-              <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">
+            <div className="flex gap-8 font-mono text-xs uppercase tracking-wider">
+              <Link href="/discover" className="text-stone-400 hover:text-white transition-colors">
                 Discover
               </Link>
-              <Link href="/predictions" className="text-sm text-stone-400 hover:text-white transition-colors">
+              <Link href="/predictions" className="text-stone-400 hover:text-white transition-colors">
                 Regions
               </Link>
-              <Link href="/farm" className="text-sm text-stone-400 hover:text-white transition-colors">
+              <Link href="/farm" className="text-stone-400 hover:text-white transition-colors">
                 For Farms
               </Link>
-              <Link href="/about" className="text-sm text-stone-400 hover:text-white transition-colors">
+              <Link href="/about" className="text-stone-400 hover:text-white transition-colors">
                 About
               </Link>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-stone-800">
-            <p className="text-sm text-stone-500">
+            <p className="font-mono text-xs text-stone-500">
               &copy; {new Date().getFullYear()} Fielder. All rights reserved.
             </p>
           </div>
