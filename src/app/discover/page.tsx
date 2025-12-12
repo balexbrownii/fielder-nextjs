@@ -56,57 +56,50 @@ interface DiscoveryData {
 
 // High-quality food photography from Unsplash
 const PRODUCT_IMAGES: Record<string, string> = {
-  // Citrus
-  orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=400&fit=crop&q=80',
-  navel_orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=400&fit=crop&q=80',
-  valencia_orange: 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=600&h=400&fit=crop&q=80',
-  blood_orange: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=400&fit=crop&q=80',
-  grapefruit: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=400&fit=crop&q=80',
-  ruby_red_grapefruit: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=400&fit=crop&q=80',
-  lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=400&fit=crop&q=80',
-  meyer_lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=400&fit=crop&q=80',
-  tangerine: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=400&fit=crop&q=80',
-  lime: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=600&h=400&fit=crop&q=80',
-  // Stone fruit
-  peach: 'https://images.unsplash.com/photo-1629226182803-39e0fbeb0c37?w=600&h=400&fit=crop&q=80',
-  cherry: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?w=600&h=400&fit=crop&q=80',
-  plum: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=600&h=400&fit=crop&q=80',
-  apricot: 'https://images.unsplash.com/photo-1592681820643-80e26e3c9f2f?w=600&h=400&fit=crop&q=80',
-  nectarine: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=600&h=400&fit=crop&q=80',
-  // Pome fruit
-  apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=400&fit=crop&q=80',
-  pear: 'https://images.unsplash.com/photo-1514756331096-242fdeb70d4a?w=600&h=400&fit=crop&q=80',
-  // Berries
-  strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600&h=400&fit=crop&q=80',
-  blueberry: 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=600&h=400&fit=crop&q=80',
-  raspberry: 'https://images.unsplash.com/photo-1577003833619-76bbd7f82948?w=600&h=400&fit=crop&q=80',
-  blackberry: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&h=400&fit=crop&q=80',
-  // Vegetables
-  tomato: 'https://images.unsplash.com/photo-1546470427-227c7369a9b6?w=600&h=400&fit=crop&q=80',
-  pepper: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600&h=400&fit=crop&q=80',
-  carrot: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=600&h=400&fit=crop&q=80',
-  potato: 'https://images.unsplash.com/photo-1518977676601-b53f82afe52a?w=600&h=400&fit=crop&q=80',
-  onion: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=600&h=400&fit=crop&q=80',
-  garlic: 'https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=600&h=400&fit=crop&q=80',
-  // Nuts
-  pecan: 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=400&fit=crop&q=80',
-  walnut: 'https://images.unsplash.com/photo-1563412885-139e4045ec60?w=600&h=400&fit=crop&q=80',
-  almond: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=600&h=400&fit=crop&q=80',
-  // Meat & Dairy
-  pork: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=400&fit=crop&q=80',
-  chicken: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=600&h=400&fit=crop&q=80',
-  eggs: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&h=400&fit=crop&q=80',
-  // Honey & Processed
-  honey: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&h=400&fit=crop&q=80',
-  maple_syrup: 'https://images.unsplash.com/photo-1589496933738-f5c27bc146e3?w=600&h=400&fit=crop&q=80',
-  // Category fallbacks
-  fruit: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=600&h=400&fit=crop&q=80',
-  vegetable: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&h=400&fit=crop&q=80',
-  citrus: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=400&fit=crop&q=80',
-  nut: 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=400&fit=crop&q=80',
-  meat: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=400&fit=crop&q=80',
-  dairy: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&h=400&fit=crop&q=80',
-  processed: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&h=400&fit=crop&q=80',
+  orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=450&fit=crop&q=80',
+  navel_orange: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=450&fit=crop&q=80',
+  valencia_orange: 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=600&h=450&fit=crop&q=80',
+  blood_orange: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
+  grapefruit: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
+  ruby_red_grapefruit: 'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
+  lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=450&fit=crop&q=80',
+  meyer_lemon: 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=450&fit=crop&q=80',
+  tangerine: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
+  lime: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=600&h=450&fit=crop&q=80',
+  peach: 'https://images.unsplash.com/photo-1629226182803-39e0fbeb0c37?w=600&h=450&fit=crop&q=80',
+  cherry: 'https://images.unsplash.com/photo-1528821128474-27f963b062bf?w=600&h=450&fit=crop&q=80',
+  plum: 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=600&h=450&fit=crop&q=80',
+  apricot: 'https://images.unsplash.com/photo-1592681820643-80e26e3c9f2f?w=600&h=450&fit=crop&q=80',
+  nectarine: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=600&h=450&fit=crop&q=80',
+  apple: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=450&fit=crop&q=80',
+  pear: 'https://images.unsplash.com/photo-1514756331096-242fdeb70d4a?w=600&h=450&fit=crop&q=80',
+  strawberry: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600&h=450&fit=crop&q=80',
+  blueberry: 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=600&h=450&fit=crop&q=80',
+  raspberry: 'https://images.unsplash.com/photo-1577003833619-76bbd7f82948?w=600&h=450&fit=crop&q=80',
+  blackberry: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&h=450&fit=crop&q=80',
+  tomato: 'https://images.unsplash.com/photo-1546470427-227c7369a9b6?w=600&h=450&fit=crop&q=80',
+  pepper: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600&h=450&fit=crop&q=80',
+  carrot: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=600&h=450&fit=crop&q=80',
+  potato: 'https://images.unsplash.com/photo-1518977676601-b53f82afe52a?w=600&h=450&fit=crop&q=80',
+  onion: 'https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=600&h=450&fit=crop&q=80',
+  garlic: 'https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=600&h=450&fit=crop&q=80',
+  pecan: 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=450&fit=crop&q=80',
+  walnut: 'https://images.unsplash.com/photo-1563412885-139e4045ec60?w=600&h=450&fit=crop&q=80',
+  almond: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=600&h=450&fit=crop&q=80',
+  pork: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=450&fit=crop&q=80',
+  heritage_pork: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=450&fit=crop&q=80',
+  chicken: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=600&h=450&fit=crop&q=80',
+  pasture_chicken: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=600&h=450&fit=crop&q=80',
+  eggs: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&h=450&fit=crop&q=80',
+  honey: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&h=450&fit=crop&q=80',
+  maple_syrup: 'https://images.unsplash.com/photo-1589496933738-f5c27bc146e3?w=600&h=450&fit=crop&q=80',
+  fruit: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=600&h=450&fit=crop&q=80',
+  vegetable: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&h=450&fit=crop&q=80',
+  citrus: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
+  nut: 'https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=450&fit=crop&q=80',
+  meat: 'https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=450&fit=crop&q=80',
+  dairy: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&h=450&fit=crop&q=80',
+  processed: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&h=450&fit=crop&q=80',
 }
 
 function getProductImage(productId: string, varietyId: string, category: string): string {
@@ -135,7 +128,6 @@ export default function DiscoverPage() {
   const [lookingUpZip, setLookingUpZip] = useState(false)
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false)
 
-  // Reverse geocode to get location name
   useEffect(() => {
     if (location && !manualLocation) {
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${location.lat}&lon=${location.lon}&format=json`)
@@ -197,14 +189,12 @@ export default function DiscoverPage() {
     setShowLocationPicker(false)
   }, [requestLocation])
 
-  // Load with default location immediately on mount
   useEffect(() => {
     if (!hasLoadedInitial) {
       setHasLoadedInitial(true)
     }
   }, [hasLoadedInitial])
 
-  // Fetch data
   useEffect(() => {
     if (!activeLocation) return
     setLoading(true)
@@ -227,13 +217,13 @@ export default function DiscoverPage() {
   }, [activeLocation?.lat, activeLocation?.lon, filterState.buildQueryString])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f5f3ef]">
       <Header />
 
       {/* Hero */}
-      <section className="bg-[#faf9f7] border-b border-stone-200">
+      <section className="border-b border-stone-300">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-          <h1 className="font-serif text-3xl sm:text-4xl font-light text-stone-900">
+          <h1 className="font-serif text-3xl sm:text-4xl text-stone-900">
             Discover Fresh Produce
           </h1>
 
@@ -241,13 +231,13 @@ export default function DiscoverPage() {
           <div className="mt-4 relative inline-block">
             <button
               onClick={() => setShowLocationPicker(!showLocationPicker)}
-              className="inline-flex items-center gap-2 text-stone-600 hover:text-[#c41e3a] transition-colors"
+              className="inline-flex items-center gap-2 font-mono text-sm text-stone-600 hover:text-[#c41e3a] transition-colors"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="border-b border-dashed border-stone-400">
+              <span className="border-b border-dashed border-stone-400 uppercase tracking-wider">
                 {activeLocation.name}
               </span>
             </button>
@@ -256,7 +246,7 @@ export default function DiscoverPage() {
             {showLocationPicker && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowLocationPicker(false)} />
-                <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white p-4 shadow-lg border border-stone-200">
+                <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-[#fffef9] p-4 shadow-md border border-stone-300">
                   <div className="mb-3">
                     <div className="flex gap-2">
                       <input
@@ -264,31 +254,31 @@ export default function DiscoverPage() {
                         value={zipInput}
                         onChange={(e) => setZipInput(e.target.value.replace(/\D/g, '').slice(0, 5))}
                         placeholder="ZIP code"
-                        className="flex-1 border border-stone-300 px-3 py-2 text-sm outline-none focus:border-[#c41e3a]"
+                        className="flex-1 border border-stone-300 px-3 py-2 font-mono text-sm outline-none focus:border-[#c41e3a] bg-white"
                         onKeyDown={(e) => e.key === 'Enter' && handleZipLookup()}
                       />
                       <button
                         onClick={handleZipLookup}
                         disabled={lookingUpZip}
-                        className="bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-800"
+                        className="bg-stone-900 px-3 py-2 font-mono text-xs uppercase tracking-wider text-white hover:bg-stone-800"
                       >
                         Go
                       </button>
                     </div>
-                    {zipError && <p className="mt-1 text-xs text-red-600">{zipError}</p>}
+                    {zipError && <p className="mt-1 font-mono text-xs text-red-600">{zipError}</p>}
                   </div>
                   <button
                     onClick={handleUseDeviceLocation}
-                    className="w-full text-left px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 mb-2"
+                    className="w-full text-left px-3 py-2 font-mono text-sm text-stone-600 hover:bg-stone-100 mb-2"
                   >
                     Use my location
                   </button>
-                  <div className="border-t border-stone-100 pt-2 max-h-40 overflow-y-auto">
+                  <div className="border-t border-stone-200 pt-2 max-h-40 overflow-y-auto">
                     {FALLBACK_CITIES.slice(0, 8).map((city) => (
                       <button
                         key={city.name}
                         onClick={() => handleCitySelect(city)}
-                        className="w-full text-left px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50"
+                        className="w-full text-left px-3 py-1.5 font-mono text-sm text-stone-600 hover:bg-stone-100"
                       >
                         {city.name}
                       </button>
@@ -310,15 +300,15 @@ export default function DiscoverPage() {
             {/* Loading */}
             {(geoLoading || loading) && (
               <div className="flex flex-col items-center justify-center py-24">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-stone-900" />
-                <p className="mt-4 text-stone-500">Loading...</p>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
+                <p className="mt-4 font-mono text-sm text-stone-500 uppercase tracking-wider">Loading...</p>
               </div>
             )}
 
             {/* Error */}
             {error && (
-              <div className="bg-stone-50 p-6 text-center">
-                <p className="text-stone-700">{error}</p>
+              <div className="bg-[#fffef9] border border-stone-300 p-6 text-center">
+                <p className="font-serif text-stone-700">{error}</p>
               </div>
             )}
 
@@ -329,7 +319,7 @@ export default function DiscoverPage() {
                 {data.atPeak.length > 0 && (
                   <section>
                     <div className="mb-8">
-                      <span className="text-xs font-semibold tracking-widest text-[#c41e3a] uppercase">
+                      <span className="font-mono text-xs uppercase tracking-widest text-[#c41e3a]">
                         At Peak Now
                       </span>
                       <h2 className="mt-1 font-serif text-2xl text-stone-900">
@@ -348,7 +338,7 @@ export default function DiscoverPage() {
                 {data.inSeason.length > 0 && (
                   <section>
                     <div className="mb-8">
-                      <span className="text-xs font-semibold tracking-widest text-stone-500 uppercase">
+                      <span className="font-mono text-xs uppercase tracking-widest text-stone-500">
                         In Season
                       </span>
                       <h2 className="mt-1 font-serif text-2xl text-stone-900">
@@ -367,7 +357,7 @@ export default function DiscoverPage() {
                 {data.approaching.length > 0 && (
                   <section>
                     <div className="mb-8">
-                      <span className="text-xs font-semibold tracking-widest text-stone-500 uppercase">
+                      <span className="font-mono text-xs uppercase tracking-widest text-stone-500">
                         Coming Soon
                       </span>
                       <h2 className="mt-1 font-serif text-2xl text-stone-900">
@@ -386,7 +376,7 @@ export default function DiscoverPage() {
                 {data.offSeason.length > 0 && filterState.filters.status.includes('off_season') && (
                   <section>
                     <div className="mb-8">
-                      <span className="text-xs font-semibold tracking-widest text-stone-400 uppercase">
+                      <span className="font-mono text-xs uppercase tracking-widest text-stone-400">
                         Off Season
                       </span>
                       <h2 className="mt-1 font-serif text-2xl text-stone-900">
@@ -404,10 +394,10 @@ export default function DiscoverPage() {
                 {/* Empty */}
                 {data.totalResults === 0 && (
                   <div className="text-center py-16">
-                    <p className="text-stone-600">No results found. Try adjusting your filters.</p>
+                    <p className="font-serif text-stone-600">No results found. Try adjusting your filters.</p>
                     <button
                       onClick={() => filterState.resetFilters()}
-                      className="mt-4 text-[#c41e3a] hover:underline"
+                      className="mt-4 font-mono text-sm text-[#c41e3a] hover:underline uppercase tracking-wider"
                     >
                       Reset filters
                     </button>
@@ -427,34 +417,42 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
   const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
 
   return (
-    <Link href={href} className={`group block ${status === 'off' ? 'opacity-60' : ''}`}>
-      {/* Image */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
-        <Image
-          src={imageUrl}
-          alt={item.varietyDisplayName}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-        />
-        {/* Status Badge */}
-        {status === 'peak' && (
-          <div className="absolute top-3 left-3">
-            <span className="inline-block bg-[#c41e3a] text-white text-xs font-semibold px-2.5 py-1">
-              Peak
-            </span>
-          </div>
-        )}
+    <Link href={href} className={`group block bg-[#fffef9] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
+      {/* Card with padding around image */}
+      <div className="p-3">
+        {/* Inset Image */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-white border border-stone-200">
+          <Image
+            src={imageUrl}
+            alt={item.varietyDisplayName}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          />
+          {/* Status Badge */}
+          {status === 'peak' && (
+            <div className="absolute top-2 left-2">
+              <span className="font-mono text-xs uppercase tracking-wider px-2 py-1 bg-[#c41e3a] text-white">
+                Peak
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content - Notecard Style */}
-      <div className="mt-4 border-l-2 border-stone-200 pl-4">
-        <h3 className="font-medium text-stone-900 group-hover:text-[#c41e3a] transition-colors">
+      <div className="px-4 pb-4">
+        {/* Title */}
+        <h3 className="font-serif text-lg text-stone-900 group-hover:text-[#c41e3a] transition-colors">
           {item.varietyDisplayName}
         </h3>
 
         {/* Specs - Typewriter style */}
         <dl className="mt-3 space-y-1 font-mono text-xs text-stone-500">
+          <div className="flex">
+            <dt className="w-16 uppercase tracking-wide">Cultivar</dt>
+            <dd className="text-stone-700">{item.productDisplayName}</dd>
+          </div>
           <div className="flex">
             <dt className="w-16 uppercase tracking-wide">Origin</dt>
             <dd className="text-stone-700">{item.regionDisplayName}, {item.state}</dd>
@@ -465,12 +463,6 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
               <dd className="text-stone-700">{formatDate(item.harvestStart)} – {formatDate(item.harvestEnd)}</dd>
             </div>
           )}
-          {item.optimalStart && status !== 'off' && (
-            <div className="flex">
-              <dt className="w-16 uppercase tracking-wide">Peak</dt>
-              <dd className="text-stone-700">{formatDate(item.optimalStart)} – {formatDate(item.optimalEnd)}</dd>
-            </div>
-          )}
           {item.brix && (
             <div className="flex">
               <dt className="w-16 uppercase tracking-wide">Brix</dt>
@@ -478,14 +470,14 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
             </div>
           )}
           <div className="flex">
-            <dt className="w-16 uppercase tracking-wide">Dist</dt>
+            <dt className="w-16 uppercase tracking-wide">Distance</dt>
             <dd className="text-stone-700">{item.distanceMiles} mi</dd>
           </div>
         </dl>
 
         {/* Flavor Profile */}
         {item.flavorProfile && (
-          <p className="mt-3 text-sm text-stone-600 italic line-clamp-2">
+          <p className="mt-3 font-serif text-sm text-stone-600 italic line-clamp-2">
             &ldquo;{item.flavorProfile}&rdquo;
           </p>
         )}
@@ -493,7 +485,7 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
         {/* Quality Tier */}
         {item.qualityTier && status !== 'off' && (
           <div className="mt-3">
-            <span className="font-mono text-xs uppercase tracking-wide text-amber-700">
+            <span className="font-mono text-xs uppercase tracking-widest text-[#c41e3a]">
               {item.qualityTier}
             </span>
           </div>
