@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -115,7 +115,7 @@ function formatDate(dateStr?: string | null): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export default function DiscoverPage() {
+function DiscoverPageContent() {
   const searchParams = useSearchParams()
   // Auto-request geolocation, but don't fallback to a fake default if it fails
   const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(true)
@@ -454,6 +454,22 @@ export default function DiscoverPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+// Wrap in Suspense for useSearchParams
+export default function DiscoverPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f5f3ef]">
+        <Header />
+        <div className="flex items-center justify-center py-24">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
+        </div>
+      </div>
+    }>
+      <DiscoverPageContent />
+    </Suspense>
   )
 }
 
