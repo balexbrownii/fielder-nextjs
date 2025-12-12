@@ -7,7 +7,6 @@
  * - Desktop: Fixed left sidebar (280px)
  */
 
-import { Fragment } from 'react'
 import {
   DISTANCE_OPTIONS,
   STATUS_OPTIONS,
@@ -38,12 +37,12 @@ export function FilterSidebar({ filterState, categoryCounts = {} }: FilterSideba
       {/* Mobile: Floating Filter Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-green-600 px-5 py-3 text-white shadow-lg hover:bg-green-700 transition-colors"
+        className="lg:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-3 text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
       >
         <FilterIcon className="h-5 w-5" />
         <span className="font-medium">Filters</span>
         {activeFilterCount > 0 && (
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-green-600">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-bold text-[var(--color-accent)]">
             {activeFilterCount}
           </span>
         )}
@@ -52,14 +51,14 @@ export function FilterSidebar({ filterState, categoryCounts = {} }: FilterSideba
       {/* Mobile: Drawer Overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50"
+          className="lg:hidden fixed inset-0 z-40 bg-stone-900/50 backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Mobile: Slide-in Drawer */}
       <div
-        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-80 max-w-full transform bg-white shadow-xl transition-transform duration-300 ${
+        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-80 max-w-full transform bg-[var(--color-cream)] shadow-xl transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -78,7 +77,7 @@ export function FilterSidebar({ filterState, categoryCounts = {} }: FilterSideba
 
       {/* Desktop: Fixed Sidebar */}
       <aside className="hidden lg:block w-72 shrink-0">
-        <div className="sticky top-24 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+        <div className="sticky top-24 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200/50">
           <FilterContent
             filters={filters}
             setDistance={setDistance}
@@ -120,13 +119,13 @@ function FilterContent({
   return (
     <div className={`${isMobile ? 'h-full overflow-y-auto' : ''}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between ${isMobile ? 'border-b px-6 py-4' : 'mb-6'}`}>
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+      <div className={`flex items-center justify-between ${isMobile ? 'border-b border-stone-200 px-6 py-4' : 'mb-6'}`}>
+        <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-stone-900">Filters</h3>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="text-sm text-green-600 hover:text-green-700 font-medium"
+              className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] font-medium transition-colors"
             >
               Clear all
             </button>
@@ -134,7 +133,7 @@ function FilterContent({
           {isMobile && onClose && (
             <button
               onClick={onClose}
-              className="ml-2 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              className="ml-2 rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
             >
               <CloseIcon className="h-5 w-5" />
             </button>
@@ -156,9 +155,9 @@ function FilterContent({
                   name="distance"
                   checked={filters.maxDistance === option.value}
                   onChange={() => setDistance(option.value)}
-                  className="h-4 w-4 border-gray-300 text-green-600 focus:ring-green-500"
+                  className="h-4 w-4 border-stone-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)] focus:ring-offset-0"
                 />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                <span className="text-sm text-stone-600 group-hover:text-stone-900 transition-colors">
                   {option.value === null ? 'Any distance' : `Within ${option.label}`}
                 </span>
               </label>
@@ -178,9 +177,9 @@ function FilterContent({
                   type="checkbox"
                   checked={filters.status.includes(option.value)}
                   onChange={() => toggleStatus(option.value)}
-                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  className="h-4 w-4 rounded border-stone-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)] focus:ring-offset-0"
                 />
-                <span className="flex items-center gap-2 text-sm text-gray-700 group-hover:text-gray-900">
+                <span className="flex items-center gap-2 text-sm text-stone-600 group-hover:text-stone-900 transition-colors">
                   <StatusDot color={option.color} />
                   {option.label}
                 </span>
@@ -203,13 +202,13 @@ function FilterContent({
                     type="checkbox"
                     checked={filters.categories.includes(option.value)}
                     onChange={() => toggleCategory(option.value)}
-                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="h-4 w-4 rounded border-stone-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)] focus:ring-offset-0"
                   />
-                  <span className="flex items-center gap-2 text-sm text-gray-700 group-hover:text-gray-900">
+                  <span className="flex items-center gap-2 text-sm text-stone-600 group-hover:text-stone-900 transition-colors">
                     <span>{option.icon}</span>
                     {option.label}
                     {count > 0 && (
-                      <span className="text-xs text-gray-400">({count})</span>
+                      <span className="text-xs text-stone-400">({count})</span>
                     )}
                   </span>
                 </label>
@@ -221,10 +220,10 @@ function FilterContent({
 
       {/* Mobile: Apply Button */}
       {isMobile && onClose && (
-        <div className="border-t px-6 py-4 bg-white">
+        <div className="border-t border-stone-200 px-6 py-4 bg-[var(--color-cream)]">
           <button
             onClick={onClose}
-            className="w-full rounded-lg bg-green-600 py-3 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+            className="w-full rounded-full bg-[var(--color-accent)] py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-[var(--color-accent-dark)] transition-all active:scale-[0.98]"
           >
             Apply Filters
           </button>
@@ -237,7 +236,7 @@ function FilterContent({
 function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-3 text-sm font-medium text-gray-900">{title}</h4>
+      <h4 className="mb-3 text-sm font-semibold text-stone-900">{title}</h4>
       {children}
     </div>
   )
@@ -245,14 +244,14 @@ function FilterSection({ title, children }: { title: string; children: React.Rea
 
 function StatusDot({ color }: { color: string }) {
   const colorClasses: Record<string, string> = {
-    green: 'bg-green-500',
-    emerald: 'bg-emerald-500',
-    amber: 'bg-amber-500',
-    gray: 'bg-gray-400',
+    green: 'bg-[var(--color-peak)]',
+    emerald: 'bg-[var(--color-season)]',
+    amber: 'bg-[var(--color-approaching)]',
+    gray: 'bg-[var(--color-off)]',
   }
 
   return (
-    <span className={`h-2 w-2 rounded-full ${colorClasses[color] || 'bg-gray-400'}`} />
+    <span className={`h-2 w-2 rounded-full ${colorClasses[color] || 'bg-stone-400'}`} />
   )
 }
 
