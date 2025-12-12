@@ -117,8 +117,8 @@ function formatDate(dateStr?: string | null): string {
 
 export default function DiscoverPage() {
   const searchParams = useSearchParams()
-  // Don't auto-request geolocation - let user explicitly set location
-  const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(false)
+  // Auto-request geolocation, but don't fallback to a fake default if it fails
+  const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(true)
   const filterState = useFilters()
   const [data, setData] = useState<DiscoveryData | null>(null)
   const [loading, setLoading] = useState(true)
