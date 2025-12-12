@@ -117,19 +117,22 @@ function formatDate(dateStr?: string | null): string {
 
 export default function DiscoverPage() {
   const searchParams = useSearchParams()
-  const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(true)
+  // Don't auto-request geolocation - let user explicitly set location
+  const { location, error: geoError, loading: geoLoading, requestLocation } = useGeolocation(false)
   const filterState = useFilters()
   const [data, setData] = useState<DiscoveryData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
-  const [locationName, setLocationName] = useState<string>(DEFAULT_LOCATION.name)
+  const [locationName, setLocationName] = useState<string>('')
   const [zipInput, setZipInput] = useState('')
   const [zipError, setZipError] = useState<string | null>(null)
   const [lookingUpZip, setLookingUpZip] = useState(false)
   const [hasLoadedInitial, setHasLoadedInitial] = useState(false)
   const [urlParamsProcessed, setUrlParamsProcessed] = useState(false)
+  // Track if user has explicitly set a location (for distance display)
+  const hasUserLocation = manualLocation !== null || location !== null
 
   // Handle URL params for lat/lon (e.g., from product page "View Live Status" link)
   useEffect(() => {
@@ -143,17 +146,22 @@ export default function DiscoverPage() {
       const lon = parseFloat(urlLon)
 
       if (!isNaN(lat) && !isNaN(lon)) {
-        // Reverse geocode to get location name
+        // Set location IMMEDIATELY with coords, use temporary name
+        setManualLocation({ lat, lon, name: `${lat.toFixed(2)}, ${lon.toFixed(2)}` })
+
+        // Then reverse geocode to get a nicer name (async update)
         fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
           .then(res => res.json())
           .then(data => {
             const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county
             const state = data.address?.state
-            const name = city && state ? `${city}, ${state}` : `${lat.toFixed(2)}, ${lon.toFixed(2)}`
-            setManualLocation({ lat, lon, name })
+            if (city && state) {
+              // Update just the name, keep same coords
+              setManualLocation(prev => prev ? { ...prev, name: `${city}, ${state}` } : prev)
+            }
           })
           .catch(() => {
-            setManualLocation({ lat, lon, name: `${lat.toFixed(2)}, ${lon.toFixed(2)}` })
+            // Keep the coordinate-based name on error
           })
       }
     }
@@ -175,11 +183,17 @@ export default function DiscoverPage() {
     }
   }, [location?.lat, location?.lon, manualLocation])
 
+  // activeLocation: user's explicit location, or null if not set
+  // We use a central US point for API calls when no location is set (for reasonable results)
+  // but we don't pretend this is the user's location
   const activeLocation = useMemo(() => {
     if (manualLocation) return manualLocation
-    if (location) return { ...location, name: locationName }
-    return DEFAULT_LOCATION
+    if (location) return { ...location, name: locationName || 'Your Location' }
+    return null
   }, [location?.lat, location?.lon, manualLocation, locationName])
+
+  // For API calls, use center of US if no user location (just to get results)
+  const apiLocation = activeLocation || { lat: 39.8283, lon: -98.5795, name: 'United States' }
 
   const handleZipLookup = useCallback(async () => {
     if (!zipInput || zipInput.length < 5) {
@@ -224,17 +238,31 @@ export default function DiscoverPage() {
   }, [hasLoadedInitial])
 
   useEffect(() => {
-    if (!activeLocation) return
     setLoading(true)
     setError(null)
-    const queryString = filterState.buildQueryString(activeLocation.lat, activeLocation.lon)
+    // Use apiLocation for the API call (always has coordinates)
+    // Sort by name instead of distance when user hasn't set location
+    const queryString = filterState.buildQueryString(apiLocation.lat, apiLocation.lon)
     fetch(`/api/discover?${queryString}`)
       .then(res => res.json())
       .then(result => {
         if (result.error) {
           setError(result.error)
         } else {
-          setData(result)
+          // If no user location, sort alphabetically by variety name instead of by distance
+          if (!hasUserLocation) {
+            const sortAlpha = (items: DiscoveryItem[]) =>
+              [...items].sort((a, b) => a.varietyDisplayName.localeCompare(b.varietyDisplayName))
+            setData({
+              ...result,
+              atPeak: sortAlpha(result.atPeak),
+              inSeason: sortAlpha(result.inSeason),
+              approaching: sortAlpha(result.approaching),
+              offSeason: sortAlpha(result.offSeason),
+            })
+          } else {
+            setData(result)
+          }
         }
         setLoading(false)
       })
@@ -242,7 +270,7 @@ export default function DiscoverPage() {
         setError('Failed to load data')
         setLoading(false)
       })
-  }, [activeLocation?.lat, activeLocation?.lon, filterState.buildQueryString])
+  }, [apiLocation.lat, apiLocation.lon, filterState.buildQueryString, hasUserLocation])
 
   return (
     <div className="min-h-screen bg-[#f5f3ef]">
@@ -265,8 +293,8 @@ export default function DiscoverPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="border-b border-dashed border-stone-400 uppercase tracking-wider">
-                {activeLocation.name}
+              <span className={`border-b border-dashed uppercase tracking-wider ${activeLocation ? 'border-stone-400' : 'border-[var(--color-accent)] text-[var(--color-accent)]'}`}>
+                {activeLocation ? activeLocation.name : 'Set your location'}
               </span>
             </button>
 
@@ -345,7 +373,7 @@ export default function DiscoverPage() {
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                       {data.atPeak.map((item) => (
-                        <ProductCard key={item.id} item={item} status="peak" />
+                        <ProductCard key={item.id} item={item} status="peak" showDistance={hasUserLocation} />
                       ))}
                     </div>
                   </section>
@@ -364,7 +392,7 @@ export default function DiscoverPage() {
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                       {data.inSeason.map((item) => (
-                        <ProductCard key={item.id} item={item} status="season" />
+                        <ProductCard key={item.id} item={item} status="season" showDistance={hasUserLocation} />
                       ))}
                     </div>
                   </section>
@@ -383,7 +411,7 @@ export default function DiscoverPage() {
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                       {data.approaching.map((item) => (
-                        <ProductCard key={item.id} item={item} status="approaching" />
+                        <ProductCard key={item.id} item={item} status="approaching" showDistance={hasUserLocation} />
                       ))}
                     </div>
                   </section>
@@ -402,7 +430,7 @@ export default function DiscoverPage() {
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                       {data.offSeason.map((item) => (
-                        <ProductCard key={item.id} item={item} status="off" />
+                        <ProductCard key={item.id} item={item} status="off" showDistance={hasUserLocation} />
                       ))}
                     </div>
                   </section>
@@ -429,7 +457,7 @@ export default function DiscoverPage() {
   )
 }
 
-function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off' }) {
+function ProductCard({ item, status, showDistance }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off'; showDistance: boolean }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
   const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
 
@@ -486,10 +514,12 @@ function ProductCard({ item, status }: { item: DiscoveryItem; status: 'peak' | '
               <dd className="text-stone-700">{item.brix}°</dd>
             </div>
           )}
-          <div className="flex">
-            <dt className="w-16 uppercase tracking-wide">Distance</dt>
-            <dd className="text-stone-700">{item.distanceMiles} mi</dd>
-          </div>
+          {showDistance && (
+            <div className="flex">
+              <dt className="w-16 uppercase tracking-wide">Distance</dt>
+              <dd className="text-stone-700">{item.distanceMiles} mi</dd>
+            </div>
+          )}
         </dl>
 
         {/* Flavor Profile */}
