@@ -1,237 +1,340 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/Header'
+import { useGeolocation, DEFAULT_LOCATION, FALLBACK_CITIES } from '@/lib/hooks/useGeolocation'
+
+interface DiscoveryResult {
+  id: string
+  productId: string
+  productName: string
+  cultivarId: string
+  cultivarName: string
+  category: string
+  regionId: string
+  regionName: string
+  regionState: string
+  distance: number
+  status: 'at_peak' | 'in_season' | 'approaching' | 'off_season'
+  statusMessage: string
+  harvestStart?: string
+  harvestEnd?: string
+  optimalStart?: string
+  optimalEnd?: string
+  flavorProfile?: string
+  flavorNotes?: string
+  qualityTier?: string
+  seasons: string[]
+}
+
+interface DiscoveryResponse {
+  results: DiscoveryResult[]
+  location: { lat: number; lon: number; name?: string }
+  currentSeason: string
+  seasonCounts: Record<string, number>
+  statusCounts: {
+    at_peak: number
+    in_season: number
+    approaching: number
+    off_season: number
+  }
+  total: number
+}
+
+const SEASON_LABELS: Record<string, string> = {
+  winter: 'Winter',
+  spring: 'Spring',
+  summer: 'Summer',
+  fall: 'Fall',
+}
+
+const SEASON_MESSAGES: Record<string, string> = {
+  winter: "The quiet season brings citrus to its sweetest—cold nights concentrate sugars in Florida's groves.",
+  spring: "As the earth warms, tender greens and early berries emerge from fields across the South.",
+  summer: "Stone fruit season is in full swing. Peaches, cherries, and melons at their sun-ripened best.",
+  fall: "Harvest time. Apples crisp from the orchard, squash from the field, and the year's final bounty.",
+}
 
 export default function Home() {
+  const { location: geoLocation, loading: geoLoading, error: geoError, requestLocation } = useGeolocation(true)
+  const [results, setResults] = useState<DiscoveryResult[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [currentSeason, setCurrentSeason] = useState<string>('winter')
+  const [statusCounts, setStatusCounts] = useState({ at_peak: 0, in_season: 0, approaching: 0, off_season: 0 })
+  const [locationName, setLocationName] = useState<string | null>(null)
+  const [showCityPicker, setShowCityPicker] = useState(false)
+  const [manualLocation, setManualLocation] = useState<{ lat: number; lon: number; name: string } | null>(null)
+
+  const activeLocation = manualLocation || (geoLocation ? { ...geoLocation, name: locationName || undefined } : null)
+
+  const fetchDiscoveryData = useCallback(async (lat: number, lon: number) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const params = new URLSearchParams({
+        lat: lat.toString(),
+        lon: lon.toString(),
+        status: 'at_peak,in_season,approaching',
+      })
+
+      const response = await fetch(`/api/discover?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch')
+
+      const data: DiscoveryResponse = await response.json()
+      setResults(data.results)
+      setCurrentSeason(data.currentSeason)
+      setStatusCounts(data.statusCounts)
+      if (data.location.name) {
+        setLocationName(data.location.name)
+      }
+    } catch {
+      setError('Unable to load fresh produce data')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Reverse geocode to get city name
+  useEffect(() => {
+    if (geoLocation && !manualLocation && !locationName) {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${geoLocation.lat}&lon=${geoLocation.lon}&format=json`)
+        .then(res => res.json())
+        .then(data => {
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county
+          const state = data.address?.state
+          if (city && state) {
+            // Abbreviate state
+            const stateAbbr = STATE_ABBREVS[state] || state
+            setLocationName(`${city}, ${stateAbbr}`)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [geoLocation, manualLocation, locationName])
+
+  // Fetch data when location is available
+  useEffect(() => {
+    if (activeLocation) {
+      fetchDiscoveryData(activeLocation.lat, activeLocation.lon)
+    } else if (!geoLoading && geoError) {
+      // Fall back to default location
+      fetchDiscoveryData(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon)
+      setLocationName(DEFAULT_LOCATION.name)
+    }
+  }, [activeLocation, geoLoading, geoError, fetchDiscoveryData])
+
+  const handleCitySelect = (city: typeof FALLBACK_CITIES[0]) => {
+    setManualLocation({ lat: city.lat, lon: city.lon, name: city.name })
+    setLocationName(city.name)
+    setShowCityPicker(false)
+  }
+
+  const atPeakResults = results.filter(r => r.status === 'at_peak').slice(0, 6)
+  const inSeasonResults = results.filter(r => r.status === 'in_season').slice(0, 6)
+  const approachingResults = results.filter(r => r.status === 'approaching').slice(0, 4)
+
   return (
     <div className="min-h-screen bg-[var(--color-cream)]">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-[var(--color-cream)] to-green-50" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
+      {/* Hero - Seasonal Lead */}
+      <section className="relative pt-8 pb-4 sm:pt-12 sm:pb-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Season & Location */}
+          <div className="max-w-3xl">
+            <p className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-2">
+              {SEASON_LABELS[currentSeason] || 'Winter'} Harvest
+            </p>
+            <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-stone-900 leading-tight">
+              What&apos;s fresh{' '}
+              <button
+                onClick={() => setShowCityPicker(!showCityPicker)}
+                className="inline-flex items-center gap-1.5 text-[var(--color-accent)] hover:text-[var(--color-accent-dark)] transition-colors underline decoration-dotted underline-offset-4"
+              >
+                {locationName || 'near you'}
+                <LocationIcon className="h-5 w-5 flex-shrink-0" />
+              </button>
+            </h1>
+            <p className="mt-4 text-lg text-stone-600 leading-relaxed max-w-2xl">
+              {SEASON_MESSAGES[currentSeason] || SEASON_MESSAGES.winter}
+            </p>
+          </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="py-24 sm:py-32 lg:py-40">
-            <div className="mx-auto max-w-3xl text-center">
-              {/* Badge */}
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm ring-1 ring-stone-200/50">
-                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm font-medium text-stone-600">
-                  Now tracking 90+ growing regions
-                </span>
+          {/* City Picker Dropdown */}
+          {showCityPicker && (
+            <div className="mt-4 p-4 bg-white rounded-xl shadow-lg ring-1 ring-stone-200/50 max-w-md">
+              <p className="text-sm font-medium text-stone-700 mb-3">Choose a location:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {FALLBACK_CITIES.slice(0, 10).map(city => (
+                  <button
+                    key={city.name}
+                    onClick={() => handleCitySelect(city)}
+                    className="text-left px-3 py-2 text-sm rounded-lg hover:bg-stone-100 transition-colors text-stone-700"
+                  >
+                    {city.name}
+                  </button>
+                ))}
               </div>
+              {geoError && (
+                <button
+                  onClick={() => { requestLocation(); setShowCityPicker(false) }}
+                  className="mt-3 w-full text-center text-sm text-[var(--color-accent)] hover:underline"
+                >
+                  Try location again
+                </button>
+              )}
+            </div>
+          )}
 
-              {/* Headline */}
-              <h1 className="font-[family-name:var(--font-display)] text-5xl font-semibold tracking-tight text-stone-900 sm:text-6xl lg:text-7xl">
-                Know When It&apos;s{' '}
-                <span className="text-[var(--color-accent)]">At Peak</span>
-              </h1>
+          {/* Quick Stats */}
+          {!loading && (
+            <div className="mt-6 flex flex-wrap gap-4 text-sm">
+              {statusCounts.at_peak > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[var(--color-peak)]">
+                  <span className="h-2 w-2 rounded-full bg-current" />
+                  {statusCounts.at_peak} at peak
+                </span>
+              )}
+              {statusCounts.in_season > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[var(--color-season)]">
+                  <span className="h-2 w-2 rounded-full bg-current" />
+                  {statusCounts.in_season} in season
+                </span>
+              )}
+              {statusCounts.approaching > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[var(--color-approaching)]">
+                  <span className="h-2 w-2 rounded-full bg-current" />
+                  {statusCounts.approaching} coming soon
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
 
-              {/* Subhead */}
-              <p className="mt-6 text-lg leading-8 text-stone-600 sm:text-xl">
-                Science-backed harvest predictions meet the freshest local produce.
-                Discover exactly when fruit reaches perfect ripeness—sweet,
-                complex, unforgettable.
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
+        {loading ? (
+          <LoadingState />
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => activeLocation && fetchDiscoveryData(activeLocation.lat, activeLocation.lon)} />
+        ) : (
+          <div className="space-y-12">
+            {/* At Peak Section */}
+            {atPeakResults.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 rounded-full bg-[var(--color-peak)]" />
+                    <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">
+                      At Peak Now
+                    </h2>
+                  </div>
+                  {statusCounts.at_peak > 6 && (
+                    <Link href="/discover?status=at_peak" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
+                      See all {statusCounts.at_peak}
+                    </Link>
+                  )}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {atPeakResults.map(item => (
+                    <ProductCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* In Season Section */}
+            {inSeasonResults.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 rounded-full bg-[var(--color-season)]" />
+                    <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">
+                      In Season
+                    </h2>
+                  </div>
+                  {statusCounts.in_season > 6 && (
+                    <Link href="/discover?status=in_season" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
+                      See all {statusCounts.in_season}
+                    </Link>
+                  )}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {inSeasonResults.map(item => (
+                    <ProductCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Coming Soon Section */}
+            {approachingResults.length > 0 && (
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 rounded-full bg-[var(--color-approaching)]" />
+                    <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">
+                      Coming Soon
+                    </h2>
+                  </div>
+                  {statusCounts.approaching > 4 && (
+                    <Link href="/discover?status=approaching" className="text-sm font-medium text-[var(--color-accent)] hover:underline">
+                      See all {statusCounts.approaching}
+                    </Link>
+                  )}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {approachingResults.map(item => (
+                    <ProductCardCompact key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* No Results */}
+            {results.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-lg text-stone-600">No produce data available for this location yet.</p>
+                <Link href="/predictions" className="mt-4 inline-block text-[var(--color-accent)] hover:underline">
+                  Browse by region instead
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Explore More */}
+        {!loading && results.length > 0 && (
+          <section className="mt-16 pt-12 border-t border-stone-200">
+            <div className="text-center max-w-xl mx-auto">
+              <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold text-stone-900">
+                Explore More
+              </h2>
+              <p className="mt-2 text-stone-600">
+                Browse all growing regions or filter by what you&apos;re looking for.
               </p>
-
-              {/* CTAs */}
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/discover"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-[var(--color-accent-dark)] hover:shadow-xl hover:shadow-orange-500/30 active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-base font-semibold text-white shadow-sm transition-all hover:bg-[var(--color-accent-dark)] active:scale-[0.98]"
                 >
-                  Discover What&apos;s Fresh
-                  <ArrowRightIcon className="h-5 w-5" />
+                  Advanced Search
                 </Link>
                 <Link
                   href="/predictions"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-stone-900 shadow-sm ring-1 ring-stone-200 transition-all hover:bg-stone-50 hover:ring-stone-300 active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-base font-semibold text-stone-900 shadow-sm ring-1 ring-stone-200 transition-all hover:bg-stone-50 active:scale-[0.98]"
                 >
                   Browse by Region
                 </Link>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[var(--color-cream)] to-transparent" />
-      </section>
-
-      {/* Category Preview */}
-      <section className="relative py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-semibold text-stone-900 sm:text-4xl">
-              Fresh From the Field
-            </h2>
-            <p className="mt-4 text-lg text-stone-600">
-              Track peak freshness across every category
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            <CategoryCard
-              name="Fruits"
-              icon="🍎"
-              color="bg-gradient-to-br from-red-100 to-orange-100"
-              count={45}
-            />
-            <CategoryCard
-              name="Vegetables"
-              icon="🥬"
-              color="bg-gradient-to-br from-green-100 to-emerald-100"
-              count={32}
-            />
-            <CategoryCard
-              name="Nuts"
-              icon="🥜"
-              color="bg-gradient-to-br from-amber-100 to-yellow-100"
-              count={8}
-            />
-            <CategoryCard
-              name="Meat"
-              icon="🥩"
-              color="bg-gradient-to-br from-rose-100 to-red-100"
-              count={6}
-            />
-            <CategoryCard
-              name="Dairy"
-              icon="🥚"
-              color="bg-gradient-to-br from-blue-100 to-sky-100"
-              count={4}
-            />
-            <CategoryCard
-              name="Honey"
-              icon="🍯"
-              color="bg-gradient-to-br from-yellow-100 to-amber-100"
-              count={3}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-16 sm:py-24 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-semibold text-stone-900 sm:text-4xl">
-              The Science of Fresh
-            </h2>
-            <p className="mt-4 text-lg text-stone-600 max-w-2xl mx-auto">
-              We use Growing Degree Day models—the same science used by orchards
-              and researchers—to predict exactly when produce hits peak quality.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            <FeatureCard
-              number="01"
-              title="Track Weather"
-              description="We monitor temperature data across 90+ growing regions, calculating heat accumulation that drives crop development."
-            />
-            <FeatureCard
-              number="02"
-              title="Predict Harvest"
-              description="Each variety has a GDD threshold for peak quality. We know when Honeycrisp hits 2,500 GDD or Navel oranges reach 3,800."
-            />
-            <FeatureCard
-              number="03"
-              title="Find Fresh"
-              description="Browse what's at peak near you. Sort by distance, filter by type, and discover farms with exactly what you're looking for."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Regions */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <h2 className="font-[family-name:var(--font-display)] text-3xl font-semibold text-stone-900 sm:text-4xl">
-                Explore Regions
-              </h2>
-              <p className="mt-4 text-lg text-stone-600">
-                From California citrus to Michigan cherries
-              </p>
-            </div>
-            <Link
-              href="/predictions"
-              className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-dark)]"
-            >
-              View all regions
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <RegionCard
-              name="Vero Beach, FL"
-              region="Indian River District"
-              products={['Citrus', 'Grapefruit']}
-              color="from-orange-500 to-yellow-500"
-              slug="vero-beach-fl"
-            />
-            <RegionCard
-              name="Fresno, CA"
-              region="San Joaquin Valley"
-              products={['Stone Fruit', 'Citrus', 'Grapes']}
-              color="from-purple-500 to-pink-500"
-              slug="fresno-ca"
-            />
-            <RegionCard
-              name="Traverse City, MI"
-              region="Northwest Michigan"
-              products={['Cherries', 'Apples']}
-              color="from-red-500 to-rose-500"
-              slug="traverse-city-mi"
-            />
-            <RegionCard
-              name="Yakima, WA"
-              region="Yakima Valley"
-              products={['Apples', 'Pears', 'Hops']}
-              color="from-green-500 to-emerald-500"
-              slug="yakima-wa"
-            />
-          </div>
-
-          <div className="mt-8 text-center sm:hidden">
-            <Link
-              href="/predictions"
-              className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent)]"
-            >
-              View all 90+ regions
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 sm:py-24 bg-stone-900">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-semibold text-white sm:text-4xl">
-              Ready to taste the difference?
-            </h2>
-            <p className="mt-4 text-lg text-stone-400">
-              Stop guessing. Start knowing. Find produce at its absolute peak.
-            </p>
-            <Link
-              href="/discover"
-              className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-stone-900 transition-all hover:bg-stone-100 active:scale-[0.98]"
-            >
-              Discover What&apos;s Fresh
-              <ArrowRightIcon className="h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
+          </section>
+        )}
+      </main>
 
       {/* Footer */}
       <footer className="bg-stone-900 border-t border-stone-800">
@@ -246,23 +349,23 @@ export default function Home() {
               </p>
             </div>
             <div className="flex gap-8">
-              <Link href="/discover" className="text-sm text-stone-400 hover:text-white">
+              <Link href="/discover" className="text-sm text-stone-400 hover:text-white transition-colors">
                 Discover
               </Link>
-              <Link href="/predictions" className="text-sm text-stone-400 hover:text-white">
+              <Link href="/predictions" className="text-sm text-stone-400 hover:text-white transition-colors">
                 Regions
               </Link>
-              <Link href="/farm" className="text-sm text-stone-400 hover:text-white">
+              <Link href="/farm" className="text-sm text-stone-400 hover:text-white transition-colors">
                 For Farms
               </Link>
-              <Link href="/about" className="text-sm text-stone-400 hover:text-white">
+              <Link href="/about" className="text-sm text-stone-400 hover:text-white transition-colors">
                 About
               </Link>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-stone-800">
             <p className="text-sm text-stone-500">
-              © {new Date().getFullYear()} Fielder. All rights reserved.
+              &copy; {new Date().getFullYear()} Fielder. All rights reserved.
             </p>
           </div>
         </div>
@@ -271,97 +374,171 @@ export default function Home() {
   )
 }
 
-function CategoryCard({
-  name,
-  icon,
-  color,
-  count,
-}: {
-  name: string
-  icon: string
-  color: string
-  count: number
-}) {
+function ProductCard({ item }: { item: DiscoveryResult }) {
+  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.cultivarId.replace(/_/g, '-').toLowerCase()}`
+
   return (
     <Link
-      href={`/discover?categories=${name.toLowerCase()}`}
-      className={`group relative overflow-hidden rounded-2xl ${color} p-6 transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]`}
+      href={href}
+      className="group block bg-white rounded-xl p-5 shadow-sm ring-1 ring-stone-200/50 transition-all hover:shadow-md hover:ring-stone-300 active:scale-[0.99]"
     >
-      <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="font-semibold text-stone-900">{name}</h3>
-      <p className="text-sm text-stone-600">{count} varieties</p>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-stone-900 group-hover:text-[var(--color-accent)] transition-colors truncate">
+            {item.cultivarName}
+          </h3>
+          <p className="text-sm text-stone-500 truncate">
+            {item.productName}
+          </p>
+        </div>
+        <StatusBadge status={item.status} />
+      </div>
+
+      {/* Flavor Profile */}
+      {item.flavorProfile && (
+        <p className="mt-3 text-sm text-stone-600 line-clamp-2">
+          {item.flavorProfile}
+        </p>
+      )}
+
+      {/* Region & Distance */}
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <span className="text-stone-500 truncate">
+          {item.regionName}, {item.regionState}
+        </span>
+        <span className="text-stone-400 flex-shrink-0 ml-2">
+          {item.distance} mi
+        </span>
+      </div>
+
+      {/* Harvest Window */}
+      {item.harvestStart && (
+        <p className="mt-2 text-xs text-stone-400">
+          Harvest: {formatDate(item.harvestStart)} – {formatDate(item.harvestEnd)}
+        </p>
+      )}
     </Link>
   )
 }
 
-function FeatureCard({
-  number,
-  title,
-  description,
-}: {
-  number: string
-  title: string
-  description: string
-}) {
-  return (
-    <div className="relative">
-      <div className="mb-4">
-        <span className="font-[family-name:var(--font-display)] text-5xl font-semibold text-stone-200">
-          {number}
-        </span>
-      </div>
-      <h3 className="text-xl font-semibold text-stone-900 mb-2">{title}</h3>
-      <p className="text-stone-600 leading-relaxed">{description}</p>
-    </div>
-  )
-}
+function ProductCardCompact({ item }: { item: DiscoveryResult }) {
+  const href = `/predictions/${item.regionId.replace(/_/g, '-').toLowerCase()}/${item.cultivarId.replace(/_/g, '-').toLowerCase()}`
 
-function RegionCard({
-  name,
-  region,
-  products,
-  color,
-  slug,
-}: {
-  name: string
-  region: string
-  products: string[]
-  color: string
-  slug: string
-}) {
   return (
     <Link
-      href={`/predictions/${slug}`}
-      className="group relative overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/50 transition-all hover:shadow-lg hover:ring-stone-300 active:scale-[0.98]"
+      href={href}
+      className="group block bg-white rounded-lg p-4 shadow-sm ring-1 ring-stone-200/50 transition-all hover:shadow-md hover:ring-stone-300 active:scale-[0.99]"
     >
-      {/* Gradient header */}
-      <div className={`h-24 bg-gradient-to-br ${color}`} />
-
-      {/* Content */}
-      <div className="p-5">
-        <h3 className="font-semibold text-stone-900 group-hover:text-[var(--color-accent)] transition-colors">
-          {name}
-        </h3>
-        <p className="text-sm text-stone-500 mt-1">{region}</p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {products.map((product) => (
-            <span
-              key={product}
-              className="inline-flex items-center rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600"
-            >
-              {product}
-            </span>
-          ))}
+      <div className="flex items-center gap-3">
+        <StatusDot status={item.status} />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-stone-900 group-hover:text-[var(--color-accent)] transition-colors truncate text-sm">
+            {item.cultivarName}
+          </h3>
+          <p className="text-xs text-stone-500 truncate">
+            {item.regionName} &bull; {item.distance} mi
+          </p>
         </div>
       </div>
     </Link>
   )
 }
 
-function ArrowRightIcon({ className }: { className?: string }) {
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    at_peak: 'bg-[var(--color-peak-light)] text-[var(--color-peak)]',
+    in_season: 'bg-[var(--color-season-light)] text-[var(--color-season)]',
+    approaching: 'bg-[var(--color-approaching-light)] text-[var(--color-approaching)]',
+    off_season: 'bg-stone-100 text-stone-500',
+  }
+
+  const labels: Record<string, string> = {
+    at_peak: 'Peak',
+    in_season: 'In Season',
+    approaching: 'Soon',
+    off_season: 'Off Season',
+  }
+
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status] || styles.off_season}`}>
+      {labels[status] || 'Unknown'}
+    </span>
+  )
+}
+
+function StatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    at_peak: 'bg-[var(--color-peak)]',
+    in_season: 'bg-[var(--color-season)]',
+    approaching: 'bg-[var(--color-approaching)]',
+    off_season: 'bg-stone-400',
+  }
+
+  return <span className={`h-2 w-2 rounded-full flex-shrink-0 ${colors[status] || colors.off_season}`} />
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-12">
+      <section>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-3 w-3 rounded-full bg-stone-200 animate-pulse" />
+          <div className="h-7 w-32 bg-stone-200 rounded animate-pulse" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white rounded-xl p-5 shadow-sm ring-1 ring-stone-200/50 animate-pulse">
+              <div className="h-5 w-3/4 bg-stone-200 rounded mb-2" />
+              <div className="h-4 w-1/2 bg-stone-100 rounded mb-4" />
+              <div className="h-4 w-full bg-stone-100 rounded mb-2" />
+              <div className="h-3 w-1/3 bg-stone-100 rounded" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="text-center py-16">
+      <p className="text-lg text-stone-600 mb-4">{message}</p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-base font-semibold text-white shadow-sm transition-all hover:bg-[var(--color-accent-dark)]"
+      >
+        Try Again
+      </button>
+    </div>
+  )
+}
+
+function LocationIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   )
+}
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const STATE_ABBREVS: Record<string, string> = {
+  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+  'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+  'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+  'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+  'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+  'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+  'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+  'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
 }
