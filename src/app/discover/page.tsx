@@ -419,7 +419,7 @@ function DiscoverPageContent() {
       <section className="border-b border-stone-300">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <h1 className="font-serif text-3xl sm:text-4xl text-stone-900">
-            Discover Fresh Produce
+            Discover Fresh Produce - v2
           </h1>
 
           {/* Location */}
