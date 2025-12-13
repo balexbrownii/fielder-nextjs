@@ -623,6 +623,8 @@ function ProductCard({ item, status, showDistance, cardIndex }: { item: Discover
       <div className="p-3">
         {/* Inset Image */}
         <div className="relative aspect-[4/3] overflow-hidden bg-white border border-stone-200">
+          {/* Debug: show card index */}
+          <div className="absolute top-0 right-0 bg-black text-white text-xs px-1 z-10">{cardIndex}</div>
           <Image
             src={imageUrl}
             alt={item.varietyDisplayName}
