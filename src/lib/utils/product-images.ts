@@ -6,39 +6,45 @@
 // Multiple high-quality images per product type for visual variety
 export const PRODUCT_IMAGE_POOLS: Record<string, string[]> = {
   orange: [
+    // Verified Pexels orange images
+    'https://images.pexels.com/photos/1937743/pexels-photo-1937743.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/1002778/pexels-photo-1002778.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/2683373/pexels-photo-2683373.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     'https://images.unsplash.com/photo-1547514701-42782101795e?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800&h=600&fit=crop&q=80',
   ],
   navel_orange: [
+    // Verified Pexels orange images
+    'https://images.pexels.com/photos/1937743/pexels-photo-1937743.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/1002778/pexels-photo-1002778.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/2683373/pexels-photo-2683373.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     'https://images.unsplash.com/photo-1547514701-42782101795e?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?w=800&h=600&fit=crop&q=80',
   ],
   valencia_orange: [
-    'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=800&h=600&fit=crop&q=80',
+    // Verified Pexels orange images
+    'https://images.pexels.com/photos/1937743/pexels-photo-1937743.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/1002778/pexels-photo-1002778.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     'https://images.unsplash.com/photo-1547514701-42782101795e?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800&h=600&fit=crop&q=80',
   ],
   blood_orange: [
     'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=800&h=600&fit=crop&q=80',
     'https://images.unsplash.com/photo-1597714026720-8f74c62310ba?w=800&h=600&fit=crop&q=80',
   ],
   grapefruit: [
-    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1560155016-bd4879ae8f21?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1597714026720-8f74c62310ba?w=800&h=600&fit=crop&q=80',
+    // Verified Pexels grapefruit images
+    'https://images.pexels.com/photos/209549/pexels-photo-209549.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/3471790/pexels-photo-3471790.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/4936470/pexels-photo-4936470.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
   ],
   ruby_red_grapefruit: [
-    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1560155016-bd4879ae8f21?w=800&h=600&fit=crop&q=80',
+    // Verified Pexels grapefruit images
+    'https://images.pexels.com/photos/209549/pexels-photo-209549.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/3471790/pexels-photo-3471790.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
   ],
   rio_star_grapefruit: [
-    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1560155016-bd4879ae8f21?w=800&h=600&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1597714026720-8f74c62310ba?w=800&h=600&fit=crop&q=80',
+    // Verified Pexels grapefruit images
+    'https://images.pexels.com/photos/209549/pexels-photo-209549.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/4936470/pexels-photo-4936470.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    'https://images.pexels.com/photos/3471790/pexels-photo-3471790.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
   ],
   lemon: [
     'https://images.unsplash.com/photo-1590502593747-42a996133562?w=800&h=600&fit=crop&q=80',
