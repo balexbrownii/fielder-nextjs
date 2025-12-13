@@ -235,21 +235,19 @@ function hashCode(str: string): number {
   return Math.abs(hash)
 }
 
-function getProductImage(productId: string, varietyId: string, category: string, offeringId: string): string {
+// Global counter to ensure each card gets a different image
+let imageCounter = 0
+
+function getProductImage(productId: string, varietyId: string, category: string): string {
   const varietyKey = varietyId.toLowerCase().replace(/-/g, '_')
   const productKey = productId.toLowerCase().replace(/-/g, '_')
 
   // Find the image pool (variety-specific, product-level, or category fallback)
   const pool = PRODUCT_IMAGE_POOLS[varietyKey] || PRODUCT_IMAGE_POOLS[productKey] || PRODUCT_IMAGE_POOLS[category] || PRODUCT_IMAGE_POOLS.fruit
 
-  // Use the offering ID which includes region (e.g., "navel_orange_indian_river")
-  const hash = hashCode(offeringId)
-  const index = hash % pool.length
-
-  // Debug logging
-  if (typeof window !== 'undefined') {
-    console.log(`[Image] offeringId="${offeringId}" varietyKey="${varietyKey}" poolSize=${pool.length} -> index=${index}`)
-  }
+  // Simply cycle through images
+  const index = imageCounter % pool.length
+  imageCounter++
 
   return pool[index]
 }
@@ -620,8 +618,7 @@ export default function DiscoverPage() {
 
 function ProductCard({ item, status, showDistance }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off'; showDistance: boolean }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
-  // Use offeringId (not id) because id might be a UUID from Supabase
-  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, item.offeringId)
+  const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
 
   return (
     <Link href={href} className={`group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
