@@ -89,6 +89,11 @@ const PRODUCT_IMAGE_POOLS: Record<string, string[]> = {
     'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
     'https://images.unsplash.com/photo-1600577916195-23daae7f32c8?w=600&h=450&fit=crop&q=80',
   ],
+  rio_star_grapefruit: [
+    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1600577916195-23daae7f32c8?w=600&h=450&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1568305473490-4a3f4b4b3e9a?w=600&h=450&fit=crop&q=80',
+  ],
   lemon: [
     'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=450&fit=crop&q=80',
     'https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=600&h=450&fit=crop&q=80',
