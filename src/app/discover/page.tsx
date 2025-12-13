@@ -235,23 +235,17 @@ function hashCode(str: string): number {
   return Math.abs(hash)
 }
 
-function getProductImage(productId: string, varietyId: string, category: string, uniqueId: string): string {
+function getProductImage(productId: string, varietyId: string, category: string, cardIndex: number): string {
   const varietyKey = varietyId.toLowerCase().replace(/-/g, '_')
   const productKey = productId.toLowerCase().replace(/-/g, '_')
 
   // Find the image pool (variety-specific, product-level, or category fallback)
   const pool = PRODUCT_IMAGE_POOLS[varietyKey] || PRODUCT_IMAGE_POOLS[productKey] || PRODUCT_IMAGE_POOLS[category] || PRODUCT_IMAGE_POOLS.fruit
 
-  // Use hash of uniqueId to pick from pool
-  let hash = 0
-  for (let i = 0; i < uniqueId.length; i++) {
-    hash = ((hash << 5) - hash) + uniqueId.charCodeAt(i)
-    hash = hash & hash
-  }
-  const index = Math.abs(hash) % pool.length
+  // Use cardIndex directly to pick from pool - each card gets a different image
+  const index = cardIndex % pool.length
 
-  // Add unique param to prevent any caching
-  return `${pool[index]}&sig=${uniqueId}`
+  return pool[index]
 }
 
 function formatDate(dateStr?: string | null): string {
@@ -517,8 +511,8 @@ function DiscoverPageContent() {
                       </h2>
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                      {data.atPeak.map((item) => (
-                        <ProductCard key={item.id} item={item} status="peak" showDistance={hasUserLocation} />
+                      {data.atPeak.map((item, idx) => (
+                        <ProductCard key={item.id} item={item} status="peak" showDistance={hasUserLocation} cardIndex={idx} />
                       ))}
                     </div>
                   </section>
@@ -536,8 +530,8 @@ function DiscoverPageContent() {
                       </h2>
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                      {data.inSeason.map((item) => (
-                        <ProductCard key={item.id} item={item} status="season" showDistance={hasUserLocation} />
+                      {data.inSeason.map((item, idx) => (
+                        <ProductCard key={item.id} item={item} status="season" showDistance={hasUserLocation} cardIndex={100 + idx} />
                       ))}
                     </div>
                   </section>
@@ -555,8 +549,8 @@ function DiscoverPageContent() {
                       </h2>
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                      {data.approaching.map((item) => (
-                        <ProductCard key={item.id} item={item} status="approaching" showDistance={hasUserLocation} />
+                      {data.approaching.map((item, idx) => (
+                        <ProductCard key={item.id} item={item} status="approaching" showDistance={hasUserLocation} cardIndex={200 + idx} />
                       ))}
                     </div>
                   </section>
@@ -574,8 +568,8 @@ function DiscoverPageContent() {
                       </h2>
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                      {data.offSeason.map((item) => (
-                        <ProductCard key={item.id} item={item} status="off" showDistance={hasUserLocation} />
+                      {data.offSeason.map((item, idx) => (
+                        <ProductCard key={item.id} item={item} status="off" showDistance={hasUserLocation} cardIndex={300 + idx} />
                       ))}
                     </div>
                   </section>
@@ -618,9 +612,10 @@ export default function DiscoverPage() {
   )
 }
 
-function ProductCard({ item, status, showDistance }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off'; showDistance: boolean }) {
+function ProductCard({ item, status, showDistance, cardIndex }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off'; showDistance: boolean; cardIndex: number }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
-  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, `${item.regionId}_${item.varietyId}`)
+  // Use cardIndex directly to cycle through images - guaranteed different for each card
+  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, cardIndex)
 
   return (
     <Link href={href} className={`group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
