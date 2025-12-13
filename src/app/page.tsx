@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Header } from '@/components/Header'
 import { useGeolocation, DEFAULT_LOCATION } from '@/lib/hooks/useGeolocation'
+import { getProductImage } from '@/lib/utils/product-images'
 
 interface DiscoveryItem {
   id: string
@@ -46,137 +47,6 @@ interface DiscoveryResponse {
   currentSeason: string
   source: string
   timestamp: string
-}
-
-// Multiple high-quality images per product type for visual variety
-const PRODUCT_IMAGE_POOLS: Record<string, string[]> = {
-  orange: [
-    'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=600&h=450&fit=crop&q=80',
-  ],
-  navel_orange: [
-    'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?w=600&h=450&fit=crop&q=80',
-  ],
-  valencia_orange: [
-    'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=600&h=450&fit=crop&q=80',
-  ],
-  blood_orange: [
-    'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1597714026720-8f74c62310ba?w=600&h=450&fit=crop&q=80',
-  ],
-  grapefruit: [
-    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1568305473490-4a3f4b4b3e9a?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1600577916195-23daae7f32c8?w=600&h=450&fit=crop&q=80',
-  ],
-  ruby_red_grapefruit: [
-    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1600577916195-23daae7f32c8?w=600&h=450&fit=crop&q=80',
-  ],
-  rio_star_grapefruit: [
-    'https://images.unsplash.com/photo-1577234286642-fc512a5f8f11?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1600577916195-23daae7f32c8?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1568305473490-4a3f4b4b3e9a?w=600&h=450&fit=crop&q=80',
-  ],
-  lemon: [
-    'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1587496679742-bad502958fbf?w=600&h=450&fit=crop&q=80',
-  ],
-  meyer_lemon: [
-    'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1587496679742-bad502958fbf?w=600&h=450&fit=crop&q=80',
-  ],
-  tangerine: [
-    'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=600&h=450&fit=crop&q=80',
-  ],
-  lime: [
-    'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1590502593747-42a996133562?w=600&h=450&fit=crop&q=80',
-  ],
-  peach: [
-    'https://images.unsplash.com/photo-1629226182803-39e0fbeb0c37?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1595124264441-11c8c2a9a50c?w=600&h=450&fit=crop&q=80',
-  ],
-  cherry: [
-    'https://images.unsplash.com/photo-1528821128474-27f963b062bf?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=600&h=450&fit=crop&q=80',
-  ],
-  plum: ['https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=600&h=450&fit=crop&q=80'],
-  apricot: ['https://images.unsplash.com/photo-1592681820643-80e26e3c9f2f?w=600&h=450&fit=crop&q=80'],
-  nectarine: ['https://images.unsplash.com/photo-1557800636-894a64c1696f?w=600&h=450&fit=crop&q=80'],
-  apple: [
-    'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=600&h=450&fit=crop&q=80',
-  ],
-  pear: ['https://images.unsplash.com/photo-1514756331096-242fdeb70d4a?w=600&h=450&fit=crop&q=80'],
-  strawberry: [
-    'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1543528176-61b239494933?w=600&h=450&fit=crop&q=80',
-  ],
-  blueberry: [
-    'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1457296898342-cdd24f4aec6f?w=600&h=450&fit=crop&q=80',
-  ],
-  raspberry: ['https://images.unsplash.com/photo-1577003833619-76bbd7f82948?w=600&h=450&fit=crop&q=80'],
-  blackberry: ['https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&h=450&fit=crop&q=80'],
-  tomato: [
-    'https://images.unsplash.com/photo-1546470427-227c7369a9b6?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&h=450&fit=crop&q=80',
-  ],
-  pepper: ['https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600&h=450&fit=crop&q=80'],
-  carrot: ['https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=600&h=450&fit=crop&q=80'],
-  potato: ['https://images.unsplash.com/photo-1518977676601-b53f82afe52a?w=600&h=450&fit=crop&q=80'],
-  onion: ['https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=600&h=450&fit=crop&q=80'],
-  garlic: ['https://images.unsplash.com/photo-1540148426945-6cf22a6b2383?w=600&h=450&fit=crop&q=80'],
-  pecan: ['https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=450&fit=crop&q=80'],
-  walnut: ['https://images.unsplash.com/photo-1563412885-139e4045ec60?w=600&h=450&fit=crop&q=80'],
-  almond: ['https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=600&h=450&fit=crop&q=80'],
-  pork: ['https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=450&fit=crop&q=80'],
-  heritage_pork: ['https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=450&fit=crop&q=80'],
-  chicken: ['https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=600&h=450&fit=crop&q=80'],
-  pasture_chicken: ['https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=600&h=450&fit=crop&q=80'],
-  eggs: [
-    'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1569288052389-dac9b01c9c05?w=600&h=450&fit=crop&q=80',
-  ],
-  honey: [
-    'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600&h=450&fit=crop&q=80',
-  ],
-  maple_syrup: ['https://images.unsplash.com/photo-1589496933738-f5c27bc146e3?w=600&h=450&fit=crop&q=80'],
-  fruit: [
-    'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&h=450&fit=crop&q=80',
-  ],
-  vegetable: [
-    'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=600&h=450&fit=crop&q=80',
-  ],
-  citrus: [
-    'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1547514701-42782101795e?w=600&h=450&fit=crop&q=80',
-  ],
-  nut: ['https://images.unsplash.com/photo-1608797178974-15b35a64ede9?w=600&h=450&fit=crop&q=80'],
-  meat: ['https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=600&h=450&fit=crop&q=80'],
-  dairy: ['https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&h=450&fit=crop&q=80'],
-  processed: ['https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&h=450&fit=crop&q=80'],
-}
-
-function getProductImage(productId: string, varietyId: string, category: string, cardIndex: number): string {
-  const varietyKey = varietyId.toLowerCase().replace(/-/g, '_')
-  const productKey = productId.toLowerCase().replace(/-/g, '_')
-  const pool = PRODUCT_IMAGE_POOLS[varietyKey] || PRODUCT_IMAGE_POOLS[productKey] || PRODUCT_IMAGE_POOLS[category] || PRODUCT_IMAGE_POOLS.fruit
-  const index = cardIndex % pool.length
-  return pool[index]
 }
 
 const SEASON_MESSAGES: Record<string, string> = {
@@ -393,8 +263,8 @@ export default function Home() {
                   )}
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {atPeakDisplay.map((item, idx) => (
-                    <ProductCard key={item.id} item={item} showPeakBadge cardIndex={idx} />
+                  {atPeakDisplay.map((item) => (
+                    <ProductCard key={item.id} item={item} showPeakBadge />
                   ))}
                 </div>
               </section>
@@ -419,8 +289,8 @@ export default function Home() {
                   )}
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {inSeasonDisplay.map((item, idx) => (
-                    <ProductCard key={item.id} item={item} cardIndex={100 + idx} />
+                  {inSeasonDisplay.map((item) => (
+                    <ProductCard key={item.id} item={item} />
                   ))}
                 </div>
               </section>
@@ -445,8 +315,8 @@ export default function Home() {
                   )}
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                  {approachingDisplay.map((item, idx) => (
-                    <ProductCardSmall key={item.id} item={item} cardIndex={200 + idx} />
+                  {approachingDisplay.map((item) => (
+                    <ProductCardSmall key={item.id} item={item} />
                   ))}
                 </div>
               </section>
@@ -524,9 +394,10 @@ export default function Home() {
   )
 }
 
-function ProductCard({ item, showPeakBadge, cardIndex }: { item: DiscoveryItem; showPeakBadge?: boolean; cardIndex: number }) {
+function ProductCard({ item, showPeakBadge }: { item: DiscoveryItem; showPeakBadge?: boolean }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
-  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, cardIndex)
+  // Use regionId_varietyId for consistent image across pages
+  const imageUrl = getProductImage(item.varietyId, item.productId, item.category, `${item.regionId}_${item.varietyId}`)
 
   return (
     <Link href={href} className="group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow">
@@ -586,9 +457,10 @@ function ProductCard({ item, showPeakBadge, cardIndex }: { item: DiscoveryItem; 
   )
 }
 
-function ProductCardSmall({ item, cardIndex }: { item: DiscoveryItem; cardIndex: number }) {
+function ProductCardSmall({ item }: { item: DiscoveryItem }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
-  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, cardIndex)
+  // Use regionId_varietyId for consistent image across pages
+  const imageUrl = getProductImage(item.varietyId, item.productId, item.category, `${item.regionId}_${item.varietyId}`)
 
   return (
     <Link href={href} className="group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow">
