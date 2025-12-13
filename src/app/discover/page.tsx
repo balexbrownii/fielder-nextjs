@@ -235,20 +235,21 @@ function hashCode(str: string): number {
   return Math.abs(hash)
 }
 
-function getProductImage(productId: string, varietyId: string, category: string, itemId: string): string {
+function getProductImage(productId: string, varietyId: string, category: string, itemId: string, regionId?: string): string {
   const varietyKey = varietyId.toLowerCase().replace(/-/g, '_')
   const productKey = productId.toLowerCase().replace(/-/g, '_')
 
   // Find the image pool (variety-specific, product-level, or category fallback)
   const pool = PRODUCT_IMAGE_POOLS[varietyKey] || PRODUCT_IMAGE_POOLS[productKey] || PRODUCT_IMAGE_POOLS[category] || PRODUCT_IMAGE_POOLS.fruit
 
-  // Use item ID to deterministically pick an image from the pool
-  const hash = hashCode(itemId)
+  // Use combination of IDs for better entropy
+  const uniqueKey = `${itemId}_${regionId || ''}_${varietyId}`
+  const hash = hashCode(uniqueKey)
   const index = hash % pool.length
 
   // Debug logging
   if (typeof window !== 'undefined') {
-    console.log(`[Image] ${itemId} -> hash:${hash} -> index:${index}/${pool.length} -> ${pool[index].split('photo-')[1]?.slice(0,10)}`)
+    console.log(`[Image] ${uniqueKey} -> hash:${hash} -> index:${index}/${pool.length}`)
   }
 
   return pool[index]
@@ -620,7 +621,7 @@ export default function DiscoverPage() {
 
 function ProductCard({ item, status, showDistance }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off'; showDistance: boolean }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
-  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, item.id)
+  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, item.id, item.regionId)
 
   return (
     <Link href={href} className={`group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
