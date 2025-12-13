@@ -235,21 +235,23 @@ function hashCode(str: string): number {
   return Math.abs(hash)
 }
 
-// Global counter to ensure each card gets a different image
-let imageCounter = 0
-
-function getProductImage(productId: string, varietyId: string, category: string): string {
+function getProductImage(productId: string, varietyId: string, category: string, uniqueId: string): string {
   const varietyKey = varietyId.toLowerCase().replace(/-/g, '_')
   const productKey = productId.toLowerCase().replace(/-/g, '_')
 
   // Find the image pool (variety-specific, product-level, or category fallback)
   const pool = PRODUCT_IMAGE_POOLS[varietyKey] || PRODUCT_IMAGE_POOLS[productKey] || PRODUCT_IMAGE_POOLS[category] || PRODUCT_IMAGE_POOLS.fruit
 
-  // Simply cycle through images
-  const index = imageCounter % pool.length
-  imageCounter++
+  // Use hash of uniqueId to pick from pool
+  let hash = 0
+  for (let i = 0; i < uniqueId.length; i++) {
+    hash = ((hash << 5) - hash) + uniqueId.charCodeAt(i)
+    hash = hash & hash
+  }
+  const index = Math.abs(hash) % pool.length
 
-  return pool[index]
+  // Add unique param to prevent any caching
+  return `${pool[index]}&sig=${uniqueId}`
 }
 
 function formatDate(dateStr?: string | null): string {
@@ -618,7 +620,7 @@ export default function DiscoverPage() {
 
 function ProductCard({ item, status, showDistance }: { item: DiscoveryItem; status: 'peak' | 'season' | 'approaching' | 'off'; showDistance: boolean }) {
   const href = `/predictions/${item.regionSlug}/${item.varietyId.replace(/_/g, '-').toLowerCase()}`
-  const imageUrl = getProductImage(item.productId, item.varietyId, item.category)
+  const imageUrl = getProductImage(item.productId, item.varietyId, item.category, `${item.regionId}_${item.varietyId}`)
 
   return (
     <Link href={href} className={`group block bg-[var(--color-cream)] border border-stone-300 shadow-sm hover:shadow-md transition-shadow ${status === 'off' ? 'opacity-60' : ''}`}>
